@@ -19,13 +19,14 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "babel-jest": "^29.7.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "webpack": "^5.88.0",
-    "webpack-cli": "^5.1.0",
     "babel-loader": "^9.1.0",
     "css-loader": "^6.8.0",
-    "style-loader": "^3.3.0"
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "style-loader": "^3.3.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0"
   },
   "jest": {
     "testEnvironment": "jsdom",
@@ -37,6 +38,9 @@
     ],
     "transform": {
       "^.+\\.(js|jsx)$": "babel-jest"
+    },
+    "moduleNameMapper": {
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
     }
   },
   "babel": {

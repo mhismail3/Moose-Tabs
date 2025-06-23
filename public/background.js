@@ -9,6 +9,9 @@ importScripts('TabTree.js');
 // Global tab hierarchy manager
 let tabHierarchy = new TabTree();
 
+// Track active sidebar instances
+let activeSidebars = new Set();
+
 // Extension installation handler
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('Moose-Tabs extension installed:', details.reason);
@@ -108,18 +111,56 @@ chrome.action.onClicked.addListener(async (tab) => {
 });
 
 // Message handler for communication with UI
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   console.log('Message received:', request);
   
-  switch (request.action) {
-    case 'getHierarchy':
-      sendResponse({ hierarchy: getHierarchy(request.windowId) });
-      break;
-    case 'getTab':
-      sendResponse({ tab: getTab(request.tabId) });
-      break;
-    default:
-      sendResponse({ error: 'Unknown action' });
+  try {
+    switch (request.action) {
+      case 'getTabHierarchy':
+      case 'getHierarchy':
+        const windowId = request.windowId || (sender.tab ? sender.tab.windowId : null);
+        const hierarchy = getHierarchy(windowId);
+        sendResponse({ 
+          success: true, 
+          hierarchy: hierarchy,
+          windowId: windowId,
+          timestamp: Date.now()
+        });
+        break;
+      case 'getTab':
+        const tab = getTab(request.tabId);
+        sendResponse({ 
+          success: true, 
+          tab: tab 
+        });
+        break;
+      case 'sidebarActive':
+        console.log('Sidebar became active');
+        activeSidebars.add(sender);
+        // Send immediate hierarchy update to newly active sidebar
+        const currentHierarchy = getHierarchy();
+        setTimeout(() => {
+          notifySpecificSidebar(sender, currentHierarchy);
+        }, 100);
+        sendResponse({ success: true });
+        break;
+      case 'sidebarInactive':
+        console.log('Sidebar became inactive');
+        activeSidebars.delete(sender);
+        sendResponse({ success: true });
+        break;
+      default:
+        sendResponse({ 
+          success: false, 
+          error: 'Unknown action: ' + request.action 
+        });
+    }
+  } catch (error) {
+    console.error('Error handling message:', error);
+    sendResponse({ 
+      success: false, 
+      error: error.message 
+    });
   }
   
   return true; // Keep message channel open for async response
@@ -313,11 +354,19 @@ async function initializeExistingTabs() {
   try {
     console.log('Initializing existing tabs...');
     
+    // Clear existing hierarchy to start fresh
+    tabHierarchy = new TabTree();
+    
     // Get all tabs from all windows
     const tabs = await chrome.tabs.query({});
     console.log(`Found ${tabs.length} existing tabs`);
     
-    // Sort tabs by creation order (approximate using index)
+    if (tabs.length === 0) {
+      console.log('No tabs found during initialization');
+      return;
+    }
+    
+    // Sort tabs by creation order (approximate using index and window)
     tabs.sort((a, b) => {
       if (a.windowId !== b.windowId) {
         return a.windowId - b.windowId;
@@ -325,12 +374,29 @@ async function initializeExistingTabs() {
       return a.index - b.index;
     });
     
-    // Add tabs to hierarchy
+    // Add tabs to hierarchy with detailed logging (silent mode to avoid notification spam)
+    let addedCount = 0;
     for (const tab of tabs) {
-      addTab(tab);
+      try {
+        console.log(`Adding tab ${tab.id}: "${tab.title}" (${tab.url})`);
+        addTab(tab, true); // silent = true during initialization
+        addedCount++;
+      } catch (tabError) {
+        console.error(`Failed to add tab ${tab.id}:`, tabError);
+      }
     }
     
-    console.log('Tab hierarchy initialized');
+    console.log(`Tab hierarchy initialized with ${addedCount}/${tabs.length} tabs`);
+    
+    // Log hierarchy summary
+    const hierarchy = getHierarchy();
+    console.log(`Final hierarchy has ${hierarchy.length} root tabs`);
+    
+    // Force a notification to any listening sidebars
+    setTimeout(() => {
+      notifyHierarchyChange();
+    }, 500);
+    
   } catch (error) {
     console.error('Failed to initialize existing tabs:', error);
   }
@@ -339,14 +405,17 @@ async function initializeExistingTabs() {
 /**
  * Add a tab to the hierarchy
  * @param {Object} tab - Chrome tab object
+ * @param {boolean} silent - Skip notifications (for bulk operations)
  */
-function addTab(tab) {
+function addTab(tab, silent = false) {
   try {
     console.log(`Adding tab ${tab.id} to hierarchy`);
     tabHierarchy.addTab(tab);
     
-    // Notify UI of hierarchy change (debounced)
-    debounceNotifyHierarchyChange();
+    // Notify UI of hierarchy change (debounced) unless silent
+    if (!silent) {
+      debounceNotifyHierarchyChange();
+    }
   } catch (error) {
     console.error('Failed to add tab to hierarchy:', error);
   }
@@ -420,32 +489,67 @@ function getTab(tabId) {
 }
 
 /**
+ * Notify specific sidebar of hierarchy changes
+ */
+async function notifySpecificSidebar(sender, hierarchy) {
+  try {
+    const message = {
+      action: 'hierarchyUpdated',
+      hierarchy: hierarchy,
+      timestamp: Date.now()
+    };
+    
+    // Send message to specific sender (sidebar)
+    chrome.tabs.sendMessage(sender.tab?.id || 0, message).catch(() => {
+      // If tab message fails, try runtime message
+      chrome.runtime.sendMessage(message).catch(() => {
+        console.log('Failed to send message to sidebar');
+      });
+    });
+  } catch (error) {
+    console.log('Error sending message to specific sidebar:', error);
+  }
+}
+
+/**
  * Notify UI components of hierarchy changes with enhanced error handling
  */
 async function notifyHierarchyChange() {
   try {
-    // Get all windows to send updates to all open sidebars
-    const windows = await chrome.windows.getAll();
-    console.log(`Notifying hierarchy change to ${windows.length} windows`);
+    console.log(`Notifying hierarchy change to ${activeSidebars.size} active sidebars`);
     
-    for (const window of windows) {
+    if (activeSidebars.size === 0) {
+      console.log('No active sidebars to notify');
+      return;
+    }
+    
+    const hierarchy = getHierarchy();
+    
+    // Create a copy of activeSidebars to avoid modification during iteration
+    const sidebarsCopy = new Set(activeSidebars);
+    
+    for (const sender of sidebarsCopy) {
       try {
-        const hierarchy = getHierarchy(window.id);
-        
-        // Send message to any listening UI in this window
-        const message = {
-          action: 'hierarchyUpdated',
-          windowId: window.id,
-          hierarchy: hierarchy,
-          timestamp: Date.now()
-        };
-        
-        await chrome.runtime.sendMessage(message);
-        console.log(`Hierarchy update sent to window ${window.id}`);
+        await notifySpecificSidebar(sender, hierarchy);
       } catch (messageError) {
-        // Ignore errors if no UI is listening (this is expected)
-        console.log(`No listener for window ${window.id} (expected if sidebar not open)`);
+        console.log('Failed to notify sidebar, removing from active list');
+        activeSidebars.delete(sender);
       }
+    }
+    
+    // Also try broadcasting via runtime message as fallback
+    try {
+      const message = {
+        action: 'hierarchyUpdated',
+        hierarchy: hierarchy,
+        timestamp: Date.now()
+      };
+      
+      chrome.runtime.sendMessage(message).catch(() => {
+        // Ignore errors - this is just a fallback
+      });
+    } catch (error) {
+      // Ignore broadcast errors
     }
   } catch (error) {
     console.error('Failed to notify hierarchy change:', error);
