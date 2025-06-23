@@ -6,19 +6,8 @@ function TabItem({ tab, level = 0 }) {
 
   const hasChildren = tab.children && tab.children.length > 0;
 
-  // Debug logging to understand the data structure
-  if (level === 0) {
-    console.log('TabItem Debug - Tab data:', {
-      id: tab.id,
-      title: tab.title,
-      hasChildren: hasChildren,
-      childrenLength: tab.children ? tab.children.length : 0,
-      children: tab.children
-    });
-  }
 
   const toggleExpanded = () => {
-    console.log(`Toggling tab ${tab.id} from ${isExpanded ? 'expanded' : 'collapsed'} to ${!isExpanded ? 'expanded' : 'collapsed'}`);
     setIsExpanded(!isExpanded);
   };
 
@@ -32,7 +21,7 @@ function TabItem({ tab, level = 0 }) {
         {hasChildren && (
           <button
             data-testid={`expand-collapse-btn-${tab.id}`}
-            className="expand-collapse-btn"
+            className={`expand-collapse-btn${level > 0 ? ' nested' : ''}`}
             onClick={toggleExpanded}
             aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >

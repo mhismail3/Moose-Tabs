@@ -1,63 +1,84 @@
 .tab-tree {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
-  color: #333;
+  color: #e5e5e5;
+  padding: 8px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .tab-item {
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .tab-content {
-  padding: 8px 12px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .tab-content:hover {
-  background-color: #f5f5f5;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .tab-level-0 {
-  border-left: 3px solid #4285f4;
+  border-left: 3px solid #6366f1;
 }
 
 .tab-level-1 {
-  border-left: 3px solid #34a853;
+  border-left: 3px solid #10b981;
 }
 
 .tab-level-2 {
-  border-left: 3px solid #fbbc04;
+  border-left: 3px solid #f59e0b;
 }
 
 .tab-level-3 {
-  border-left: 3px solid #ea4335;
+  border-left: 3px solid #ef4444;
 }
 
 .tab-title {
   font-weight: 500;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #ffffff;
+  font-size: 14px;
 }
 
 .tab-url {
   font-size: 12px;
-  color: #666;
+  color: #a0a0a0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  opacity: 0.8;
 }
 
 .tab-children {
-  /* Children are indented via padding-left in renderTab function */
+  margin-top: 4px;
 }
 
 .empty-state {
-  padding: 20px;
+  padding: 60px 20px;
   text-align: center;
   color: #666;
-  font-style: italic;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.empty-state::before {
+  content: '📋';
+  font-size: 48px;
+  opacity: 0.3;
 }

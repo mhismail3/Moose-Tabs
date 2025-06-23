@@ -49,15 +49,15 @@ describe('React Sidebar App', () => {
     jest.useRealTimers();
   });
 
-  test('renders Hello Moose-Tabs message', async () => {
+  test('renders Moose Tabs message', async () => {
     render(<App />);
     
     // Should show loading first
     expect(screen.getByText('Loading tab hierarchy...')).toBeInTheDocument();
     
     // Wait for the async operation to complete
-    await screen.findByText(/Hello Moose-Tabs/i);
-    expect(screen.getByText(/Hello Moose-Tabs/i)).toBeInTheDocument();
+    await screen.findByText(/Moose Tabs/i);
+    expect(screen.getByText(/Moose Tabs/i)).toBeInTheDocument();
   });
 
   test('mounts React app without errors', async () => {
@@ -65,7 +65,7 @@ describe('React Sidebar App', () => {
     expect(container.firstChild).not.toBeNull();
     
     // Wait for loading to complete
-    await screen.findByText(/Hello Moose-Tabs/i);
+    await screen.findByText(/Moose Tabs/i);
   });
 
   test('renders app in sidebar container', async () => {
@@ -74,14 +74,14 @@ describe('React Sidebar App', () => {
     expect(sidebarContainer).toBeInTheDocument();
     
     // Wait for loading to complete
-    await screen.findByText(/Hello Moose-Tabs/i);
+    await screen.findByText(/Moose Tabs/i);
   });
   
   test('calls chrome.runtime.sendMessage to get tab hierarchy', async () => {
     render(<App />);
     
     // Wait for the component to load
-    await screen.findByText(/Hello Moose-Tabs/i);
+    await screen.findByText(/Moose Tabs/i);
     
     // Verify the chrome API was called
     expect(global.chrome.runtime.sendMessage).toHaveBeenCalledWith({

@@ -50,7 +50,7 @@ function App() {
     }, 2000); // Poll every 2 seconds
 
     // Listen for updates from background script (primary update mechanism)
-    const handleMessage = (message, sender, sendResponse) => {
+    const handleMessage = (message, _sender, sendResponse) => {
       console.log('Sidebar received message:', message);
       if (message.action === 'hierarchyUpdated' && isActive) {
         console.log('App.js real-time hierarchy update:', message.hierarchy);
@@ -88,7 +88,7 @@ function App() {
   if (loading) {
     return (
       <div data-testid="sidebar-container" className="sidebar-container">
-        <h1>Hello Moose-Tabs</h1>
+        <h1>🐃 Moose Tabs</h1>
         <div className="loading">Loading tab hierarchy...</div>
       </div>
     );
@@ -97,7 +97,7 @@ function App() {
   if (error) {
     return (
       <div data-testid="sidebar-container" className="sidebar-container">
-        <h1>Hello Moose-Tabs</h1>
+        <h1>🐃 Moose Tabs</h1>
         <div className="error">Error: {error}</div>
         <button onClick={() => window.location.reload()}>Retry</button>
       </div>
