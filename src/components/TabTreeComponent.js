@@ -1,8 +1,42 @@
 import React from 'react';
+import TabItem from './TabItem';
 import './TabTreeComponent.css';
 
 function TabTreeComponent({ tabHierarchy = [] }) {
-  if (!tabHierarchy || tabHierarchy.length === 0) {
+  // Debug: Add some test data to verify expand/collapse works
+  const debugTestData = [
+    {
+      id: 999,
+      title: 'Debug Parent Tab',
+      url: 'https://debug-parent.com',
+      children: [
+        {
+          id: 998,
+          title: 'Debug Child 1',
+          url: 'https://debug-child1.com',
+          children: []
+        },
+        {
+          id: 997,
+          title: 'Debug Child 2',
+          url: 'https://debug-child2.com',
+          children: [
+            {
+              id: 996,
+              title: 'Debug Grandchild',
+              url: 'https://debug-grandchild.com',
+              children: []
+            }
+          ]
+        }
+      ]
+    }
+  ];
+
+  // Combine real data with debug data
+  const combinedHierarchy = [...debugTestData, ...tabHierarchy];
+
+  if (!combinedHierarchy || combinedHierarchy.length === 0) {
     return (
       <div data-testid="tab-tree-container" className="tab-tree">
         <div className="empty-state">No tabs available</div>
@@ -10,29 +44,11 @@ function TabTreeComponent({ tabHierarchy = [] }) {
     );
   }
 
-  const renderTab = (tab, level = 0) => {
-    return (
-      <div key={tab.id} className="tab-item">
-        <div 
-          data-testid={`tab-${tab.id}`}
-          className={`tab-content tab-level-${level}`}
-          style={{ paddingLeft: `${level * 20}px` }}
-        >
-          <div className="tab-title">{tab.title}</div>
-          <div className="tab-url">{tab.url}</div>
-        </div>
-        {tab.children && tab.children.length > 0 && (
-          <div className="tab-children">
-            {tab.children.map(child => renderTab(child, level + 1))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div data-testid="tab-tree-container" className="tab-tree">
-      {tabHierarchy.map(tab => renderTab(tab, 0))}
+      {combinedHierarchy.map(tab => (
+        <TabItem key={tab.id} tab={tab} level={0} />
+      ))}
     </div>
   );
 }

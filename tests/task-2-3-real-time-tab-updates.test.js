@@ -99,7 +99,7 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     expect(screen.getByText('Child Tab')).toBeInTheDocument();
     
     // Check that child tab is not indented (level 0)
-    const childTabElement = screen.getByTestId('tab-2');
+    const childTabElement = screen.getByTestId('tab-content-2');
     expect(childTabElement).toHaveClass('tab-level-0');
     
     // Simulate background script detecting parent-child relationship
@@ -122,7 +122,7 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     expect(screen.getByText('Child Tab')).toBeInTheDocument();
     
     // Check that child tab is now indented (level 1)
-    const updatedChildTabElement = screen.getByTestId('tab-2');
+    const updatedChildTabElement = screen.getByTestId('tab-content-2');
     expect(updatedChildTabElement).toHaveClass('tab-level-1');
   });
 
@@ -167,8 +167,8 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     expect(screen.getByText('Tab 3')).toBeInTheDocument();
     
     // Verify hierarchy structure is maintained
-    const tab2Element = screen.getByTestId('tab-2');
-    const tab3Element = screen.getByTestId('tab-3');
+    const tab2Element = screen.getByTestId('tab-content-2');
+    const tab3Element = screen.getByTestId('tab-content-3');
     expect(tab2Element).toHaveClass('tab-level-1'); // Child of Tab 1
     expect(tab3Element).toHaveClass('tab-level-0'); // Root level
   });

@@ -23,6 +23,7 @@ function App() {
         });
         
         if (response && response.success) {
+          console.log('App.js received hierarchy:', response.hierarchy);
           setTabHierarchy(response.hierarchy || []);
         } else {
           setError(response?.error || 'Failed to fetch tab hierarchy');
@@ -52,6 +53,7 @@ function App() {
     const handleMessage = (message, sender, sendResponse) => {
       console.log('Sidebar received message:', message);
       if (message.action === 'hierarchyUpdated' && isActive) {
+        console.log('App.js real-time hierarchy update:', message.hierarchy);
         setTabHierarchy(message.hierarchy || []);
         if (sendResponse) {
           sendResponse({received: true});

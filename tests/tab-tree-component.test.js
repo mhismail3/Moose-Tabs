@@ -78,11 +78,11 @@ describe('TabTreeComponent', () => {
     render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     // Get tab elements and check their indentation classes
-    const googleTab = screen.getByTestId('tab-1');
-    const gmailTab = screen.getByTestId('tab-2');
-    const driveTab = screen.getByTestId('tab-3');
-    const documentTab = screen.getByTestId('tab-4');
-    const githubTab = screen.getByTestId('tab-5');
+    const googleTab = screen.getByTestId('tab-content-1');
+    const gmailTab = screen.getByTestId('tab-content-2');
+    const driveTab = screen.getByTestId('tab-content-3');
+    const documentTab = screen.getByTestId('tab-content-4');
+    const githubTab = screen.getByTestId('tab-content-5');
     
     // Root tabs should have level 0
     expect(googleTab).toHaveClass('tab-level-0');
