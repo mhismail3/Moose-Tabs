@@ -49,7 +49,7 @@ function App() {
       if (isActive) {
         fetchTabHierarchy();
       }
-    }, 2000); // Poll every 2 seconds
+    }, 1000); // Poll every 1 second for more responsive updates
 
     // Listen for updates from background script (primary update mechanism)
     const handleMessage = (message, _sender, sendResponse) => {

@@ -52,35 +52,42 @@ function TabItem({ tab, level = 0 }) {
         return;
       }
 
+      // Get current real browser tab information to ensure we have accurate indices
+      const [currentTargetTab, allTabsInWindow] = await Promise.all([
+        chrome.tabs.get(targetTab.id),
+        chrome.tabs.query({ windowId: targetTab.windowId })
+      ]);
+
+      console.log(`Target tab current index: ${currentTargetTab.index}, Total tabs in window: ${allTabsInWindow.length}`);
+
       let moveParams = {};
 
       if (position === 'child') {
-        // Moving as a child - position after last child or after parent
-        if (targetTab.children && targetTab.children.length > 0) {
-          const lastChild = targetTab.children[targetTab.children.length - 1];
-          moveParams.index = (lastChild.index || 0) + 1;
-        } else {
-          moveParams.index = (targetTab.index || 0) + 1;
-        }
-        
-        // If moving to different window
-        if (targetTab.windowId !== undefined) {
-          moveParams.windowId = targetTab.windowId;
-        }
+        // Moving as a child - position after target (since we don't have true parent-child in browser)
+        moveParams.index = currentTargetTab.index + 1;
+        moveParams.windowId = targetTab.windowId;
       } else {
-        // Moving as sibling - position after target
-        moveParams.index = (targetTab.index || 0) + 1;
-        
-        // If moving to different window
-        if (targetTab.windowId !== undefined) {
-          moveParams.windowId = targetTab.windowId;
-        }
+        // Moving as sibling - position after target  
+        moveParams.index = currentTargetTab.index + 1;
+        moveParams.windowId = targetTab.windowId;
       }
 
-      console.log(`Moving tab ${draggedTabId}:`, moveParams);
+      console.log(`Moving tab ${draggedTabId} to index ${moveParams.index} in window ${moveParams.windowId}`);
       await chrome.tabs.move(draggedTabId, moveParams);
+      
+      // Force refresh of the hierarchy after the move operation completes
+      // This ensures the sidebar UI reflects the new tab order immediately
+      setTimeout(async () => {
+        try {
+          await chrome.runtime.sendMessage({ action: 'refreshHierarchy' });
+        } catch (error) {
+          console.log('Failed to refresh hierarchy after move:', error);
+        }
+      }, 150); // Small delay to ensure the move operation is fully processed
+      
     } catch (error) {
       console.error('Failed to move tab:', error);
+      console.error('Error details:', error);
     }
   };
 

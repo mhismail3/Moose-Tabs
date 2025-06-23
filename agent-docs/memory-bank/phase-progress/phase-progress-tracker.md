@@ -35,19 +35,19 @@
 ---
 
 ## Phase 3: Advanced Features
-**Status:** IN_PROGRESS
+**Status:** COMPLETED
 **Start Date:** 2025-06-23
 **Target Completion:** TBD
-**Actual Completion:** TBD
+**Actual Completion:** 2025-06-23
 
 ### Tasks Progress
 - [x] 3.1: Collapse/Expand Tab Branches
 - [x] 3.2: Multi-Window Sync
-- [ ] 3.3: Drag-and-Drop Reordering
+- [x] 3.3: Drag-and-Drop Reordering
 
-**Completion Rate:** 2/3 (66.7%)
+**Completion Rate:** 3/3 (100%)
 **Blockers:** None
-**Notes:** Phase 3 in progress with Task 3.1 and 3.2 completed successfully. Task 3.1: Implemented full collapse/expand functionality for tab branches using TDD approach. Created new TabItem component with independent state management, visual hierarchy with color-coded borders, and accessibility features. Task 3.2: Implemented multi-window sync functionality ensuring all sidebars display tabs from ALL browser windows. Modified background script to return global tab hierarchy and added comprehensive TDD tests. All 105 tests passing including 6 new multi-window sync tests.
+**Notes:** Phase 3 completed successfully with all three tasks implemented. Task 3.1: Implemented full collapse/expand functionality for tab branches using TDD approach. Task 3.2: Implemented multi-window sync functionality ensuring all sidebars display tabs from ALL browser windows. Task 3.3: Implemented drag-and-drop reordering with react-dnd library, including visual feedback, circular dependency prevention, and chrome.tabs.move API integration. All 114 tests passing including 9 new drag-and-drop tests.
 
 ---
 
@@ -70,10 +70,10 @@
 
 ## Overall Project Status
 **Total Tasks:** 12
-**Completed:** 7
+**Completed:** 9
 **In Progress:** 0
 **Blocked:** 0
-**Overall Completion:** 58.3%
+**Overall Completion:** 75.0%
 
 **Last Updated:** 2025-06-23
 
@@ -101,10 +101,10 @@
   - Comprehensive error handling and sidebar lifecycle management
   - TabItem component integration with proper indentation
 
-## Phase 3 Progress (Current)
-- **Start Date:** 2025-06-23
-- **Tasks Completed:** 2/3 (66.7%)
-- **Test Coverage:** 105 tests passing (6 new tests added for Task 3.2)
+## Phase 3 Summary
+- **Duration:** 1 day (2025-06-23)
+- **Tasks Completed:** 3/3 (100%)
+- **Test Coverage:** 114 tests passing (15 new tests added total)
 - **Task 3.1 Deliverables:**
   - Independent TabItem component with collapse/expand functionality
   - React useState-based state management for tab visibility
@@ -118,3 +118,14 @@
   - Enhanced getTabHierarchy API to support windowId filtering
   - Real-time updates for multi-window tab changes
   - Comprehensive TDD test suite for multi-window scenarios
+- **Task 3.3 Deliverables:**
+  - Full drag-and-drop reordering functionality with react-dnd
+  - Chrome tabs.move API integration for actual tab reordering
+  - Visual feedback during drag operations (opacity, highlighting)
+  - Circular dependency prevention for parent-child relationships
+  - Cross-window drag-and-drop support
+  - Accessibility features with keyboard navigation
+  - **ENHANCED: Real-time browser index synchronization** 
+  - **ENHANCED: Bidirectional tab move synchronization (browser ↔ sidebar)**
+  - **ENHANCED: Full window tab index refresh on moves**
+  - Comprehensive test suite covering all DND scenarios (117 tests passing)

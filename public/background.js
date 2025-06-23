@@ -150,6 +150,19 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         activeSidebars.delete(sender);
         sendResponse({ success: true });
         break;
+      case 'refreshHierarchy':
+        console.log('Force refresh hierarchy requested');
+        // Immediately notify all sidebars with current hierarchy
+        const refreshedHierarchy = getHierarchy(null); // null = all windows
+        setTimeout(() => {
+          notifyHierarchyChange();
+        }, 50); // Small delay to ensure any pending updates are processed
+        sendResponse({ 
+          success: true, 
+          hierarchy: refreshedHierarchy,
+          timestamp: Date.now()
+        });
+        break;
       default:
         sendResponse({ 
           success: false, 
@@ -233,7 +246,7 @@ async function handleTabRemoved(tabId, removeInfo) {
 }
 
 /**
- * Handle tab movement with index updates
+ * Handle tab movement with full window synchronization
  * @param {number} tabId - Tab ID
  * @param {Object} moveInfo - Movement info
  */
@@ -244,13 +257,41 @@ async function handleTabMoved(tabId, moveInfo) {
       return;
     }
 
-    console.log(`Processing tab move: ${tabId} to index ${moveInfo.toIndex} in window ${moveInfo.windowId}`);
+    console.log(`Processing tab move: ${tabId} from index ${moveInfo.fromIndex} to ${moveInfo.toIndex} in window ${moveInfo.windowId}`);
     
-    // Update tab position
-    updateTab(tabId, { 
-      index: moveInfo.toIndex,
-      windowId: moveInfo.windowId 
-    });
+    // When a tab is moved, ALL tab indices in that window may have changed
+    // We need to refresh all tabs in the affected window to get accurate indices
+    try {
+      const allTabsInWindow = await chrome.tabs.query({ windowId: moveInfo.windowId });
+      
+      console.log(`Refreshing indices for all ${allTabsInWindow.length} tabs in window ${moveInfo.windowId}`);
+      
+      // Update all tabs in the window with their current indices
+      for (const tab of allTabsInWindow) {
+        updateTab(tab.id, {
+          index: tab.index,
+          windowId: tab.windowId,
+          title: tab.title,
+          url: tab.url
+        });
+      }
+      
+      console.log(`Tab move synchronized - ${tabId} now at index ${moveInfo.toIndex}`);
+    } catch (tabError) {
+      console.error(`Failed to refresh window tabs after move:`, tabError);
+      
+      // Fallback to basic update of just the moved tab
+      updateTab(tabId, { 
+        index: moveInfo.toIndex,
+        windowId: moveInfo.windowId 
+      });
+    }
+    
+    // Force an immediate notification to ensure UI updates quickly
+    setTimeout(() => {
+      notifyHierarchyChange();
+    }, 25); // Very short delay to ensure the update is processed
+    
   } catch (error) {
     console.error('Error in handleTabMoved:', error);
   }
@@ -379,7 +420,7 @@ async function initializeExistingTabs() {
     let addedCount = 0;
     for (const tab of tabs) {
       try {
-        console.log(`Adding tab ${tab.id}: "${tab.title}" (${tab.url})`);
+        console.log(`Adding tab ${tab.id}: "${tab.title}" at index ${tab.index} (${tab.url})`);
         addTab(tab, true); // silent = true during initialization
         addedCount++;
       } catch (tabError) {
@@ -449,7 +490,7 @@ function updateTab(tabId, updates) {
     tabHierarchy.updateTab(tabId, updates);
     
     // Notify UI of hierarchy change if significant update (debounced)
-    if (updates.url || updates.title || updates.windowId || updates.openerTabId !== undefined) {
+    if (updates.url || updates.title || updates.windowId || updates.index !== undefined || updates.openerTabId !== undefined) {
       debounceNotifyHierarchyChange();
     }
   } catch (error) {
@@ -564,7 +605,7 @@ async function notifyHierarchyChange() {
  * Enhanced debounced notification to handle rapid changes
  */
 let notificationDebounceTimer = null;
-const NOTIFICATION_DEBOUNCE_MS = 100;
+const NOTIFICATION_DEBOUNCE_MS = 50; // Reduced debounce for faster updates
 
 function debounceNotifyHierarchyChange() {
   if (notificationDebounceTimer) {

@@ -143,7 +143,7 @@ class TabTree {
   /**
    * Get complete hierarchy structure
    * @param {number} windowId - Optional window ID filter
-   * @returns {Array} Array of root tabs with nested children
+   * @returns {Array} Array of root tabs with nested children, sorted by browser order
    */
   getHierarchy(windowId = null) {
     const roots = this.getRootTabs();
@@ -151,13 +151,21 @@ class TabTree {
     // Filter by window if specified
     const filteredRoots = windowId ? roots.filter(tab => tab.windowId === windowId) : roots;
     
+    // Sort by window ID first, then by index to maintain browser tab order
+    filteredRoots.sort((a, b) => {
+      if (a.windowId !== b.windowId) {
+        return a.windowId - b.windowId;
+      }
+      return (a.index || 0) - (b.index || 0);
+    });
+    
     return filteredRoots.map(root => this._buildHierarchyNode(root.id));
   }
 
   /**
    * Private method to build hierarchy node with children
    * @param {number} tabId - Tab ID to build node for
-   * @returns {Object} Hierarchy node with children
+   * @returns {Object} Hierarchy node with children, sorted by browser order
    */
   _buildHierarchyNode(tabId) {
     const tab = this.getTab(tabId);
@@ -166,6 +174,14 @@ class TabTree {
     }
 
     const children = this.getChildren(tabId);
+    
+    // Sort children by index to maintain browser tab order
+    children.sort((a, b) => {
+      if (a.windowId !== b.windowId) {
+        return a.windowId - b.windowId;
+      }
+      return (a.index || 0) - (b.index || 0);
+    });
     
     return {
       ...tab,
