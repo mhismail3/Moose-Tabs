@@ -2,12 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import TabTreeComponent from './components/TabTreeComponent';
+import { initializeTheme } from './utils/themeDetection';
 
 function App() {
   const [tabHierarchy, setTabHierarchy] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentTheme, setCurrentTheme] = useState('light');
 
+  // Initialize theme detection
+  useEffect(() => {
+    const cleanupTheme = initializeTheme((theme) => {
+      setCurrentTheme(theme);
+      console.log(`App theme updated to: ${theme}`);
+    });
+
+    return cleanupTheme;
+  }, []);
+
+  // Tab hierarchy management
   useEffect(() => {
     let pollInterval;
     let isActive = true;

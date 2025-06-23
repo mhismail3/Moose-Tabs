@@ -5,8 +5,8 @@
 .tab-content {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-bg);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   padding: 12px 12px 12px 20px;
   margin-bottom: 4px;
@@ -15,20 +15,20 @@
 }
 
 .tab-content:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-hover);
+  border-color: var(--border-hover);
   transform: translateY(-1px);
 }
 
 .expand-collapse-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--overlay-hover);
+  border: 1px solid var(--border-hover);
   cursor: pointer;
   font-size: 12px;
   margin-right: 12px;
   padding: 6px 8px;
   border-radius: 6px;
-  color: #e5e5e5;
+  color: var(--text-secondary);
   transition: all 0.2s ease;
   min-width: 24px;
   height: 24px;
@@ -47,7 +47,7 @@
 .expand-collapse-btn:hover {
   background: rgba(99, 102, 241, 0.2);
   border-color: #6366f1;
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.1);
 }
 
@@ -73,7 +73,7 @@
 .tab-title {
   font-weight: 500;
   font-size: 14px;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -82,7 +82,7 @@
 
 .tab-url {
   font-size: 12px;
-  color: #a0a0a0;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -91,7 +91,7 @@
 
 .tab-children {
   margin-left: 16px;
-  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  border-left: 2px solid var(--border-secondary);
   padding-left: 16px;
   margin-top: 8px;
 }
@@ -122,7 +122,7 @@
 .tab-content.dragging {
   opacity: 0.5;
   transform: rotate(2deg);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 25px var(--shadow-color);
   z-index: 1000;
 }
 

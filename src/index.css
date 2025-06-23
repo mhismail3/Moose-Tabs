@@ -1,3 +1,73 @@
+/* CSS Custom Properties for Theme System */
+:root,
+.theme-light {
+  /* Light Theme Variables */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border-primary: #e5e7eb;
+  --border-secondary: #d1d5db;
+  --border-hover: #9ca3af;
+  --overlay-bg: rgba(0, 0, 0, 0.05);
+  --overlay-hover: rgba(0, 0, 0, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --error-border: rgba(239, 68, 68, 0.2);
+  --error-text: #dc2626;
+  --loading-spinner: #d1d5db;
+  --backdrop-filter-bg: rgba(255, 255, 255, 0.8);
+}
+
+/* Dark Theme Variables */
+.theme-dark {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #374151;
+  --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  --text-primary: #ffffff;
+  --text-secondary: #e5e5e5;
+  --text-muted: #a0a0a0;
+  --border-primary: #333333;
+  --border-secondary: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  --overlay-bg: rgba(255, 255, 255, 0.05);
+  --overlay-hover: rgba(255, 255, 255, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --error-border: rgba(239, 68, 68, 0.2);
+  --error-text: #fca5a5;
+  --loading-spinner: #333333;
+  --backdrop-filter-bg: rgba(255, 255, 255, 0.02);
+}
+
+/* Fallback for systems that support prefers-color-scheme */
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light):not(.theme-dark) {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #374151;
+    --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    --text-primary: #ffffff;
+    --text-secondary: #e5e5e5;
+    --text-muted: #a0a0a0;
+    --border-primary: #333333;
+    --border-secondary: rgba(255, 255, 255, 0.1);
+    --border-hover: rgba(255, 255, 255, 0.2);
+    --overlay-bg: rgba(255, 255, 255, 0.05);
+    --overlay-hover: rgba(255, 255, 255, 0.1);
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --error-bg: rgba(239, 68, 68, 0.1);
+    --error-border: rgba(239, 68, 68, 0.2);
+    --error-text: #fca5a5;
+    --loading-spinner: #333333;
+    --backdrop-filter-bg: rgba(255, 255, 255, 0.02);
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -9,26 +79,26 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #1a1a1a;
-  color: #e5e5e5;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
 }
 
 .sidebar-container {
   padding: 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: var(--bg-gradient);
   display: flex;
   flex-direction: column;
 }
 
 .sidebar-container h1 {
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
   padding: 20px 20px 16px 20px;
-  border-bottom: 1px solid #333;
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--backdrop-filter-bg);
   backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
@@ -38,7 +108,7 @@ body {
 .loading {
   padding: 40px 20px;
   text-align: center;
-  color: #a0a0a0;
+  color: var(--text-muted);
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -50,7 +120,7 @@ body {
   content: '';
   width: 16px;
   height: 16px;
-  border: 2px solid #333;
+  border: 2px solid var(--loading-spinner);
   border-top: 2px solid #6366f1;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -64,10 +134,10 @@ body {
 .error {
   margin: 20px;
   padding: 16px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
   border-radius: 8px;
-  color: #fca5a5;
+  color: var(--error-text);
 }
 
 .error button {
