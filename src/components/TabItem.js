@@ -53,22 +53,33 @@ function TabItem({ tab, level = 0 }) {
       }
 
       // Get current real browser tab information to ensure we have accurate indices
-      const [currentTargetTab, allTabsInWindow] = await Promise.all([
+      const [currentTargetTab, currentDraggedTab, allTabsInWindow] = await Promise.all([
         chrome.tabs.get(targetTab.id),
+        chrome.tabs.get(draggedTabId),
         chrome.tabs.query({ windowId: targetTab.windowId })
       ]);
 
-      console.log(`Target tab current index: ${currentTargetTab.index}, Total tabs in window: ${allTabsInWindow.length}`);
+      console.log(`Target tab current index: ${currentTargetTab.index}, Dragged tab current index: ${currentDraggedTab.index}, Total tabs in window: ${allTabsInWindow.length}`);
 
       let moveParams = {};
+      let targetIndex = currentTargetTab.index + 1; // Default: move after target
+
+      // Adjust target index if dragged tab is currently before the target tab
+      // When a tab is moved, it's first removed from its current position, 
+      // causing all tabs after it to shift down by one index
+      if (currentDraggedTab.index < currentTargetTab.index) {
+        // If dragged tab is before target, target will shift down by 1 after removal
+        // So we want to move to target's current index (which becomes target's new index + 1)
+        targetIndex = currentTargetTab.index;
+      }
 
       if (position === 'child') {
         // Moving as a child - position after target (since we don't have true parent-child in browser)
-        moveParams.index = currentTargetTab.index + 1;
+        moveParams.index = targetIndex;
         moveParams.windowId = targetTab.windowId;
       } else {
         // Moving as sibling - position after target  
-        moveParams.index = currentTargetTab.index + 1;
+        moveParams.index = targetIndex;
         moveParams.windowId = targetTab.windowId;
       }
 
