@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import TabTreeComponent from './components/TabTreeComponent';
 
 function App() {
@@ -106,8 +108,10 @@ function App() {
 
   return (
     <div data-testid="sidebar-container" className="sidebar-container">
-      <h1>Hello Moose-Tabs</h1>
-      <TabTreeComponent tabHierarchy={tabHierarchy} />
+      <h1>🐃 Moose Tabs</h1>
+      <DndProvider backend={HTML5Backend}>
+        <TabTreeComponent tabHierarchy={tabHierarchy} />
+      </DndProvider>
     </div>
   );
 }

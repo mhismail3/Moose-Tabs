@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "react": "^18.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
@@ -39,8 +41,13 @@
     "transform": {
       "^.+\\.(js|jsx)$": "babel-jest"
     },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(react-dnd|react-dnd-html5-backend|dnd-core)/)"
+    ],
     "moduleNameMapper": {
-      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+      "^react-dnd$": "<rootDir>/tests/__mocks__/react-dnd.js",
+      "^react-dnd-html5-backend$": "<rootDir>/tests/__mocks__/react-dnd-html5-backend.js"
     }
   },
   "babel": {

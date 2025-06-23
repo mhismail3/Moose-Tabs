@@ -118,12 +118,13 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     switch (request.action) {
       case 'getTabHierarchy':
       case 'getHierarchy':
-        const windowId = request.windowId || (sender.tab ? sender.tab.windowId : null);
-        const hierarchy = getHierarchy(windowId);
+        // For multi-window sync, return ALL tabs unless a specific windowId is requested
+        const requestedWindowId = request.windowId;
+        const hierarchy = getHierarchy(requestedWindowId);
         sendResponse({ 
           success: true, 
           hierarchy: hierarchy,
-          windowId: windowId,
+          windowId: requestedWindowId || 'all',
           timestamp: Date.now()
         });
         break;
@@ -137,8 +138,8 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       case 'sidebarActive':
         console.log('Sidebar became active');
         activeSidebars.add(sender);
-        // Send immediate hierarchy update to newly active sidebar
-        const currentHierarchy = getHierarchy();
+        // Send immediate hierarchy update to newly active sidebar with all windows
+        const currentHierarchy = getHierarchy(null); // null = all windows
         setTimeout(() => {
           notifySpecificSidebar(sender, currentHierarchy);
         }, 100);
@@ -458,13 +459,14 @@ function updateTab(tabId, updates) {
 
 /**
  * Get tab hierarchy
- * @param {number} windowId - Optional window ID filter
+ * @param {number|null} windowId - Optional window ID filter (null = all windows)
  * @returns {Array} Hierarchy structure
  */
 function getHierarchy(windowId = null) {
   try {
     const hierarchy = tabHierarchy.getHierarchy(windowId);
-    console.log(`Retrieved hierarchy for window ${windowId}:`, hierarchy.length, 'root tabs');
+    const windowDesc = windowId ? `window ${windowId}` : 'all windows';
+    console.log(`Retrieved hierarchy for ${windowDesc}:`, hierarchy.length, 'root tabs');
     return hierarchy;
   } catch (error) {
     console.error('Failed to get hierarchy:', error);
@@ -513,6 +515,7 @@ async function notifySpecificSidebar(sender, hierarchy) {
 
 /**
  * Notify UI components of hierarchy changes with enhanced error handling
+ * Ensures all sidebars receive the complete multi-window hierarchy
  */
 async function notifyHierarchyChange() {
   try {
@@ -523,7 +526,8 @@ async function notifyHierarchyChange() {
       return;
     }
     
-    const hierarchy = getHierarchy();
+    // Get complete hierarchy from all windows for multi-window sync
+    const hierarchy = getHierarchy(null); // null = all windows
     
     // Create a copy of activeSidebars to avoid modification during iteration
     const sidebarsCopy = new Set(activeSidebars);

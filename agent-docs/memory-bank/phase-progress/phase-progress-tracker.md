@@ -42,12 +42,12 @@
 
 ### Tasks Progress
 - [x] 3.1: Collapse/Expand Tab Branches
-- [ ] 3.2: Multi-Window Sync
+- [x] 3.2: Multi-Window Sync
 - [ ] 3.3: Drag-and-Drop Reordering
 
-**Completion Rate:** 1/3 (33.3%)
+**Completion Rate:** 2/3 (66.7%)
 **Blockers:** None
-**Notes:** Phase 3 started with Task 3.1 completed successfully. Implemented full collapse/expand functionality for tab branches using TDD approach. Created new TabItem component with independent state management, visual hierarchy with color-coded borders, and accessibility features. All 106 tests passing including 7 new tests for expand/collapse functionality.
+**Notes:** Phase 3 in progress with Task 3.1 and 3.2 completed successfully. Task 3.1: Implemented full collapse/expand functionality for tab branches using TDD approach. Created new TabItem component with independent state management, visual hierarchy with color-coded borders, and accessibility features. Task 3.2: Implemented multi-window sync functionality ensuring all sidebars display tabs from ALL browser windows. Modified background script to return global tab hierarchy and added comprehensive TDD tests. All 105 tests passing including 6 new multi-window sync tests.
 
 ---
 
@@ -70,10 +70,10 @@
 
 ## Overall Project Status
 **Total Tasks:** 12
-**Completed:** 6
+**Completed:** 7
 **In Progress:** 0
 **Blocked:** 0
-**Overall Completion:** 50.0%
+**Overall Completion:** 58.3%
 
 **Last Updated:** 2025-06-23
 
@@ -103,8 +103,8 @@
 
 ## Phase 3 Progress (Current)
 - **Start Date:** 2025-06-23
-- **Tasks Completed:** 1/3 (33.3%)
-- **Test Coverage:** 106 tests passing (7 new tests added)
+- **Tasks Completed:** 2/3 (66.7%)
+- **Test Coverage:** 105 tests passing (6 new tests added for Task 3.2)
 - **Task 3.1 Deliverables:**
   - Independent TabItem component with collapse/expand functionality
   - React useState-based state management for tab visibility
@@ -112,3 +112,9 @@
   - Accessibility features (ARIA labels, keyboard navigation)
   - Smooth CSS transitions and hover effects
   - Comprehensive test suite for all expand/collapse scenarios
+- **Task 3.2 Deliverables:**
+  - Multi-window synchronization across all browser windows
+  - Modified background script to return global tab hierarchy (all windows)
+  - Enhanced getTabHierarchy API to support windowId filtering
+  - Real-time updates for multi-window tab changes
+  - Comprehensive TDD test suite for multi-window scenarios
