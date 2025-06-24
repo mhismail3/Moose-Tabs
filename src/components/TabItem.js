@@ -6,10 +6,29 @@ import './TabTree.css';
 
 function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionInSet = 1 }) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   const hasChildren = tab.children && tab.children.length > 0;
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
+  };
+
+  const handleCloseTab = (e) => {
+    e.stopPropagation();
+    // Send message to background script to close the tab
+    chrome.runtime.sendMessage({
+      action: 'closeTab',
+      tabId: tab.id
+    });
+  };
+
+  const getFaviconUrl = (url) => {
+    try {
+      const domain = new URL(url).hostname;
+      return `https://www.google.com/s2/favicons?sz=16&domain=${domain}`;
+    } catch (e) {
+      return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMTZBOCA4IDAgMSAxIDggMEE4IDggMCAwIDEgOCAxNloiIGZpbGw9IiNGM0Y0RjYiLz4KPHA+PC9wPgo8L3N2Zz4K'; // Default favicon
+    }
   };
 
   // Extract complex logic into focused hooks
@@ -35,6 +54,8 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
         aria-setsize={totalSiblings}
         aria-posinset={positionInSet}
         onKeyDown={handleKeyDown}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {hasChildren && (
           <button
@@ -46,10 +67,28 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
             {isExpanded ? '▼' : '►'}
           </button>
         )}
+        <img 
+          src={getFaviconUrl(tab.url)} 
+          alt=""
+          className="tab-favicon"
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
         <div className="tab-info">
           <div className="tab-title">{tab.title}</div>
           <div className="tab-url">{tab.url}</div>
         </div>
+        {isHovered && (
+          <button
+            className="tab-close-btn"
+            onClick={handleCloseTab}
+            aria-label={`Close ${tab.title}`}
+            data-testid={`close-btn-${tab.id}`}
+          >
+            ×
+          </button>
+        )}
       </div>
       {hasChildren && isExpanded && (
         <div className="tab-children" role="group">

@@ -197,6 +197,19 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
           timestamp: Date.now()
         });
         break;
+      case 'closeTab':
+        console.log('Close tab requested:', request.tabId);
+        try {
+          await chrome.tabs.remove(request.tabId);
+          sendResponse({ success: true });
+        } catch (error) {
+          console.error('Failed to close tab:', error);
+          sendResponse({ 
+            success: false, 
+            error: error.message 
+          });
+        }
+        break;
       default:
         sendResponse({ 
           success: false, 

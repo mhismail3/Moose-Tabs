@@ -128,6 +128,15 @@
   outline-offset: 2px;
 }
 
+/* Tab Favicon */
+.tab-favicon {
+  width: 16px;
+  height: 16px;
+  margin-right: var(--space-md);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
 /* Tab Information */
 .tab-info {
   flex: 1;
@@ -151,6 +160,54 @@
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0.8;
+}
+
+/* Tab Close Button */
+.tab-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--text-lg);
+  font-weight: bold;
+  padding: var(--space-xs);
+  border-radius: var(--radius-md);
+  margin-left: var(--space-sm);
+  transition: all var(--transition-normal);
+  opacity: 0;
+  animation: fadeIn var(--transition-normal) forwards;
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tab-close-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  transform: scale(1.1);
+}
+
+.tab-close-btn:active {
+  transform: scale(0.95);
+}
+
+.tab-close-btn:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 /* Tab Children */
