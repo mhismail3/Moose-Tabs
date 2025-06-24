@@ -87,7 +87,7 @@ describe('Task 3.2: Multi-Window Sync', () => {
     
     // Wait for the component to load and get data
     await waitFor(() => {
-      expect(screen.getByText('🐃 Moose Tabs')).toBeInTheDocument();
+      expect(screen.getByTestId('sidebar-container')).toBeInTheDocument();
     });
     
     // Wait for hierarchy to load

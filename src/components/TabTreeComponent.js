@@ -1,7 +1,7 @@
 import React from 'react';
 import TabItem from './TabItem';
 import { getMessage } from '../utils/i18n';
-import './TabTreeComponent.css';
+import './TabTree.css';
 
 function TabTreeComponent({ tabHierarchy = [] }) {
   if (!tabHierarchy || tabHierarchy.length === 0) {

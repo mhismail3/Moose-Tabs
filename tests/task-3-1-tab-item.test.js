@@ -115,15 +115,15 @@ describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
     // Parent should have level 2 indentation
     const parentContent = screen.getByTestId('tab-content-1');
     expect(parentContent).toHaveClass('tab-level-2');
-    expect(parentContent).toHaveStyle('padding-left: 40px'); // level 2 * 20px
+    expect(parentContent).toHaveStyle('margin-left: 40px'); // level 2 * 20px
     
     // Children should have level 3 indentation
     const child1Content = screen.getByTestId('tab-content-2');
     const child2Content = screen.getByTestId('tab-content-3');
     expect(child1Content).toHaveClass('tab-level-3');
     expect(child2Content).toHaveClass('tab-level-3');
-    expect(child1Content).toHaveStyle('padding-left: 60px'); // level 3 * 20px
-    expect(child2Content).toHaveStyle('padding-left: 60px'); // level 3 * 20px
+    expect(child1Content).toHaveStyle('margin-left: 60px'); // level 3 * 20px
+    expect(child2Content).toHaveStyle('margin-left: 60px'); // level 3 * 20px
   });
 
   test('handles deeply nested tabs correctly', () => {

@@ -47,12 +47,13 @@ describe('Task 4.2: Internationalization (i18n)', () => {
   });
 
   describe('Basic i18n functionality', () => {
-    test('should use chrome.i18n.getMessage for app title', async () => {
+    test('should use chrome.i18n.getMessage for loading and no-tabs text', async () => {
       // Mock the getMessage function to return English text
       chrome.i18n.getMessage.mockImplementation((key) => {
         const messages = {
-          'app_title': 'Moose Tabs',
           'loading_text': 'Loading tab hierarchy...',
+          'no_tabs_available': 'No tabs available',
+          'refresh_button': 'Refresh',
           'error_retry_button': 'Retry'
         };
         return messages[key] || key;
@@ -60,13 +61,14 @@ describe('Task 4.2: Internationalization (i18n)', () => {
 
       render(<App />);
 
-      // Wait for component to render
+      // Wait for component to render (should show no-tabs state with empty hierarchy)
       await waitFor(() => {
-        expect(chrome.i18n.getMessage).toHaveBeenCalledWith('app_title', []);
+        expect(chrome.i18n.getMessage).toHaveBeenCalledWith('no_tabs_available', []);
       });
 
-      // Verify that the app title is displayed using i18n
-      expect(screen.getByText('🐃 Moose Tabs')).toBeInTheDocument();
+      // Verify that the no-tabs text is displayed using i18n
+      expect(screen.getByText('No tabs available')).toBeInTheDocument();
+      expect(screen.getByText('Refresh')).toBeInTheDocument();
     });
 
     test('should use chrome.i18n.getMessage for loading text', async () => {
@@ -118,8 +120,9 @@ describe('Task 4.2: Internationalization (i18n)', () => {
       chrome.i18n.getUILanguage.mockReturnValue('es');
       chrome.i18n.getMessage.mockImplementation((key) => {
         const messages = {
-          'app_title': 'Pestañas Moose',
           'loading_text': 'Cargando jerarquía de pestañas...',
+          'no_tabs_available': 'No hay pestañas disponibles',
+          'refresh_button': 'Actualizar',
           'error_retry_button': 'Reintentar'
         };
         return messages[key] || key;
@@ -127,13 +130,14 @@ describe('Task 4.2: Internationalization (i18n)', () => {
 
       render(<App />);
 
-      // Wait for component to render
+      // Wait for component to render (should show no-tabs state with empty hierarchy)
       await waitFor(() => {
-        expect(chrome.i18n.getMessage).toHaveBeenCalledWith('app_title', []);
+        expect(chrome.i18n.getMessage).toHaveBeenCalledWith('no_tabs_available', []);
       });
 
-      // Verify Spanish text is used (note: the 🐃 emoji is still prepended)
-      expect(screen.getByText('🐃 Pestañas Moose')).toBeInTheDocument();
+      // Verify Spanish text is used for no-tabs state
+      expect(screen.getByText('No hay pestañas disponibles')).toBeInTheDocument();
+      expect(screen.getByText('Actualizar')).toBeInTheDocument();
     });
 
     test('should use Spanish loading text', async () => {

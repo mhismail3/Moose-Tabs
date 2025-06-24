@@ -1,72 +1,6 @@
-/* CSS Custom Properties for Theme System */
-:root,
-.theme-light {
-  /* Light Theme Variables */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-  --border-primary: #e5e7eb;
-  --border-secondary: #d1d5db;
-  --border-hover: #9ca3af;
-  --overlay-bg: rgba(0, 0, 0, 0.05);
-  --overlay-hover: rgba(0, 0, 0, 0.1);
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --error-bg: rgba(239, 68, 68, 0.1);
-  --error-border: rgba(239, 68, 68, 0.2);
-  --error-text: #dc2626;
-  --loading-spinner: #d1d5db;
-  --backdrop-filter-bg: rgba(255, 255, 255, 0.8);
-}
-
-/* Dark Theme Variables */
-.theme-dark {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --bg-tertiary: #374151;
-  --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  --text-primary: #ffffff;
-  --text-secondary: #e5e5e5;
-  --text-muted: #a0a0a0;
-  --border-primary: #333333;
-  --border-secondary: rgba(255, 255, 255, 0.1);
-  --border-hover: rgba(255, 255, 255, 0.2);
-  --overlay-bg: rgba(255, 255, 255, 0.05);
-  --overlay-hover: rgba(255, 255, 255, 0.1);
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --error-bg: rgba(239, 68, 68, 0.1);
-  --error-border: rgba(239, 68, 68, 0.2);
-  --error-text: #fca5a5;
-  --loading-spinner: #333333;
-  --backdrop-filter-bg: rgba(255, 255, 255, 0.02);
-}
-
-/* Fallback for systems that support prefers-color-scheme */
-@media (prefers-color-scheme: dark) {
-  :root:not(.theme-light):not(.theme-dark) {
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #2d2d2d;
-    --bg-tertiary: #374151;
-    --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    --text-primary: #ffffff;
-    --text-secondary: #e5e5e5;
-    --text-muted: #a0a0a0;
-    --border-primary: #333333;
-    --border-secondary: rgba(255, 255, 255, 0.1);
-    --border-hover: rgba(255, 255, 255, 0.2);
-    --overlay-bg: rgba(255, 255, 255, 0.05);
-    --overlay-hover: rgba(255, 255, 255, 0.1);
-    --shadow-color: rgba(0, 0, 0, 0.3);
-    --error-bg: rgba(239, 68, 68, 0.1);
-    --error-border: rgba(239, 68, 68, 0.2);
-    --error-text: #fca5a5;
-    --loading-spinner: #333333;
-    --backdrop-filter-bg: rgba(255, 255, 255, 0.02);
-  }
-}
+/* Import Design System */
+@import './styles/design-tokens.css';
+@import './styles/themes.css';
 
 * {
   box-sizing: border-box;
@@ -79,49 +13,36 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-primary);
-  color: var(--text-secondary);
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
 }
 
 .sidebar-container {
   padding: 0;
   min-height: 100vh;
-  background: var(--bg-gradient);
+  background: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%);
   display: flex;
   flex-direction: column;
 }
 
-.sidebar-container h1 {
-  color: var(--text-primary);
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-  padding: 20px 20px 16px 20px;
-  border-bottom: 1px solid var(--border-primary);
-  background: var(--backdrop-filter-bg);
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
 
 .loading {
-  padding: 40px 20px;
+  padding: var(--space-4xl) var(--space-xl);
   text-align: center;
-  color: var(--text-muted);
-  font-size: 14px;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-md);
 }
 
 .loading::before {
   content: '';
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--loading-spinner);
-  border-top: 2px solid #6366f1;
+  width: var(--space-lg);
+  height: var(--space-lg);
+  border: 2px solid var(--color-border);
+  border-top: 2px solid var(--color-accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -132,25 +53,25 @@ body {
 }
 
 .error {
-  margin: 20px;
-  padding: 16px;
-  background: var(--error-bg);
-  border: 1px solid var(--error-border);
-  border-radius: 8px;
-  color: var(--error-text);
+  margin: var(--space-xl);
+  padding: var(--space-lg);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-lg);
+  color: var(--color-error);
 }
 
 .error button {
-  background: #6366f1;
+  background: var(--color-accent);
   color: white;
   border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 500;
-  margin-top: 12px;
-  transition: all 0.2s ease;
+  margin-top: var(--space-md);
+  transition: all var(--transition-normal);
 }
 
 .error button:hover {
@@ -160,4 +81,28 @@ body {
 
 .error button:active {
   transform: translateY(0);
+}
+
+.no-tabs {
+  padding: var(--space-4xl) var(--space-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.no-tabs button {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-base);
+  font-weight: 500;
+  margin-top: var(--space-md);
+  transition: all var(--transition-normal);
+}
+
+.no-tabs button:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
 }

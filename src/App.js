@@ -104,7 +104,6 @@ function App() {
   if (loading) {
     return (
       <div data-testid="sidebar-container" className="sidebar-container">
-        <h1>🐃 {getMessage('app_title', [], 'Moose Tabs')}</h1>
         <div className="loading">{getMessage('loading_text', [], 'Loading tab hierarchy...')}</div>
       </div>
     );
@@ -113,7 +112,6 @@ function App() {
   if (error) {
     return (
       <div data-testid="sidebar-container" className="sidebar-container">
-        <h1>🐃 {getMessage('app_title', [], 'Moose Tabs')}</h1>
         <div className="error">Error: {error}</div>
         <button onClick={() => window.location.reload()}>{getMessage('error_retry_button', [], 'Retry')}</button>
       </div>
@@ -124,7 +122,6 @@ function App() {
   if (!loading && !error && tabHierarchy.length === 0) {
     return (
       <div data-testid="sidebar-container" className="sidebar-container">
-        <h1>🐃 {getMessage('app_title', [], 'Moose Tabs')}</h1>
         <div className="no-tabs">
           <p>{getMessage('no_tabs_available', [], 'No tabs available')}</p>
           <button onClick={() => window.location.reload()}>
@@ -137,7 +134,6 @@ function App() {
 
   return (
     <div data-testid="sidebar-container" className="sidebar-container">
-      <h1>🐃 {getMessage('app_title', [], 'Moose Tabs')}</h1>
       <DndProvider backend={HTML5Backend}>
         <TabTreeComponent tabHierarchy={tabHierarchy} />
       </DndProvider>

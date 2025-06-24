@@ -1,0 +1,221 @@
+/* Consolidated Tab Tree Styles */
+
+/* Tree Container */
+.tab-tree {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  padding: var(--space-sm) var(--space-sm) var(--space-sm) var(--space-sm);
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Empty State */
+.empty-state {
+  padding: var(--space-6xl) var(--space-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.empty-state::before {
+  content: '📋';
+  font-size: var(--space-5xl);
+  opacity: 0.3;
+}
+
+/* Tab Item Container */
+.tab-item {
+  margin-bottom: var(--space-xs);
+}
+
+/* Tab Content */
+.tab-content {
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-overlay);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm) var(--space-lg);
+  margin-bottom: 2px;
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+
+.tab-content:hover {
+  background: var(--color-hover);
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-content:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Hierarchy Level Colors */
+.tab-level-0 {
+  border-left: 3px solid var(--color-accent);
+}
+
+.tab-level-1 {
+  border-left: 3px solid var(--color-success);
+}
+
+.tab-level-2 {
+  border-left: 3px solid var(--color-warning);
+}
+
+.tab-level-3 {
+  border-left: 3px solid var(--color-error);
+}
+
+.tab-level-4,
+.tab-level-5,
+.tab-level-6 {
+  border-left: 3px solid #8b5cf6;
+}
+
+/* Expand/Collapse Button */
+.expand-collapse-btn {
+  background: var(--color-hover);
+  border: 1px solid var(--color-border-hover);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  margin-right: var(--space-md);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-normal);
+  min-width: var(--space-2xl);
+  height: var(--space-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: normal;
+}
+
+.expand-collapse-btn.nested {
+  background: transparent;
+  border: none;
+  padding: var(--space-xs);
+}
+
+.expand-collapse-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+  transform: scale(1.1);
+}
+
+.expand-collapse-btn.nested:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border: none;
+}
+
+.expand-collapse-btn:active {
+  transform: scale(0.95);
+}
+
+.expand-collapse-btn:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Tab Information */
+.tab-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-title {
+  font-weight: 500;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-url {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.8;
+}
+
+/* Tab Children */
+.tab-children {
+  margin-left: var(--space-xl);
+  border-left: 2px solid var(--color-border);
+  padding-left: var(--space-xl);
+  margin-top: var(--space-sm);
+  position: relative;
+}
+
+/* Drag and Drop States */
+.tab-content.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-modal);
+}
+
+.tab-content.drop-target {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+  transform: scale(1.02);
+}
+
+.tab-content.drop-invalid {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--color-error);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+.tab-content[draggable="true"] {
+  cursor: grab;
+}
+
+.tab-content[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Responsive Spacing Adjustments */
+@media (max-width: 320px) {
+  .tab-content {
+    padding: var(--space-sm) var(--space-md);
+  }
+  
+  .tab-children {
+    margin-left: var(--space-md);
+    padding-left: var(--space-md);
+  }
+  
+  .expand-collapse-btn {
+    min-width: var(--space-xl);
+    height: var(--space-xl);
+    margin-right: var(--space-sm);
+  }
+}
+
+/* Better visual hierarchy for deeper nesting */
+.tab-children::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--color-border), transparent);
+}
