@@ -3,6 +3,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import TabTreeComponent from './components/TabTreeComponent';
 import { initializeTheme } from './utils/themeDetection';
+import { getMessage } from './utils/i18n';
 
 function App() {
   const [tabHierarchy, setTabHierarchy] = useState([]);
@@ -41,11 +42,11 @@ function App() {
           console.log('App.js received hierarchy:', response.hierarchy);
           setTabHierarchy(response.hierarchy || []);
         } else {
-          setError(response?.error || 'Failed to fetch tab hierarchy');
+          setError(response?.error || getMessage('error_communication', [], 'Failed to fetch tab hierarchy'));
         }
       } catch (err) {
         if (isActive) {
-          setError('Error communicating with background script: ' + err.message);
+          setError(getMessage('error_communication', [], 'Error communicating with background script') + ': ' + err.message);
         }
       } finally {
         if (isActive) {
@@ -103,8 +104,8 @@ function App() {
   if (loading) {
     return (
       <div data-testid="sidebar-container" className="sidebar-container">
-        <h1>🐃 Moose Tabs</h1>
-        <div className="loading">Loading tab hierarchy...</div>
+        <h1>🐃 {getMessage('app_title', [], 'Moose Tabs')}</h1>
+        <div className="loading">{getMessage('loading_text', [], 'Loading tab hierarchy...')}</div>
       </div>
     );
   }
@@ -112,16 +113,31 @@ function App() {
   if (error) {
     return (
       <div data-testid="sidebar-container" className="sidebar-container">
-        <h1>🐃 Moose Tabs</h1>
+        <h1>🐃 {getMessage('app_title', [], 'Moose Tabs')}</h1>
         <div className="error">Error: {error}</div>
-        <button onClick={() => window.location.reload()}>Retry</button>
+        <button onClick={() => window.location.reload()}>{getMessage('error_retry_button', [], 'Retry')}</button>
+      </div>
+    );
+  }
+
+  // Show special message if no tabs are available with a refresh option
+  if (!loading && !error && tabHierarchy.length === 0) {
+    return (
+      <div data-testid="sidebar-container" className="sidebar-container">
+        <h1>🐃 {getMessage('app_title', [], 'Moose Tabs')}</h1>
+        <div className="no-tabs">
+          <p>{getMessage('no_tabs_available', [], 'No tabs available')}</p>
+          <button onClick={() => window.location.reload()}>
+            {getMessage('refresh_button', [], 'Refresh')}
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div data-testid="sidebar-container" className="sidebar-container">
-      <h1>🐃 Moose Tabs</h1>
+      <h1>🐃 {getMessage('app_title', [], 'Moose Tabs')}</h1>
       <DndProvider backend={HTML5Backend}>
         <TabTreeComponent tabHierarchy={tabHierarchy} />
       </DndProvider>

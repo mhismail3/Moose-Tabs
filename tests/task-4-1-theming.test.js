@@ -134,10 +134,17 @@ describe('Task 4.1: Theming System', () => {
     // Wait for empty state to appear
     await screen.findByText('No tabs available');
     
-    // Verify empty state styling
+    // Verify empty state styling - should have no-tabs class on container
     const emptyState = screen.getByText('No tabs available');
     expect(emptyState).toBeInTheDocument();
-    expect(emptyState).toHaveClass('empty-state');
+    
+    // The parent div should have the no-tabs class
+    const noTabsContainer = emptyState.closest('.no-tabs');
+    expect(noTabsContainer).toBeInTheDocument();
+    
+    // Verify refresh button is present
+    const refreshButton = screen.getByText('Refresh');
+    expect(refreshButton).toBeInTheDocument();
   });
 
   test('hierarchical tabs maintain theme consistency', async () => {

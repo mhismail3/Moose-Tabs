@@ -109,7 +109,7 @@ describe('Task 3.3: Drag-and-Drop Reordering', () => {
     
     // Verify tab element has proper DND attributes
     expect(tabElement).toHaveAttribute('draggable', 'true');
-    expect(tabElement).toHaveAttribute('role', 'button');
+    expect(tabElement).toHaveAttribute('role', 'treeitem');
   });
 
   test('tab elements support drag and drop interactions', async () => {
@@ -152,9 +152,9 @@ describe('Task 3.3: Drag-and-Drop Reordering', () => {
     
     // Verify they have proper accessibility attributes
     expect(tab1).toHaveAttribute('tabIndex', '0');
-    expect(tab2).toHaveAttribute('tabIndex', '0');
-    expect(tab1).toHaveAttribute('role', 'button');
-    expect(tab2).toHaveAttribute('role', 'button');
+    expect(tab2).toHaveAttribute('tabIndex', '-1'); // Only first item has tabIndex="0"
+    expect(tab1).toHaveAttribute('role', 'treeitem');
+    expect(tab2).toHaveAttribute('role', 'treeitem');
   });
 
   test('tabs with children maintain drag and drop functionality', async () => {

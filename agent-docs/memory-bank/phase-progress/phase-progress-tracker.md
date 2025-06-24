@@ -52,17 +52,17 @@
 ---
 
 ## Phase 4: Polish and Finalization
-**Status:** IN_PROGRESS
+**Status:** COMPLETED
 **Start Date:** 2025-06-23
 **Target Completion:** TBD
-**Actual Completion:** TBD
+**Actual Completion:** 2025-06-23
 
 ### Tasks Progress
 - [x] 4.1: Theming (Light/Dark Mode)
-- [ ] 4.2: Internationalization (i18n)
-- [ ] 4.3: Accessibility (ARIA roles & Keyboard Navigation)
+- [x] 4.2: Internationalization (i18n)
+- [x] 4.3: Accessibility (ARIA roles & Keyboard Navigation)
 
-**Completion Rate:** 1/3 (33%)
+**Completion Rate:** 3/3 (100%)
 **Blockers:** None
 **Notes:** Task 4.1 completed with comprehensive CSS variable-based theming system that responds to system preferences.
 
@@ -70,10 +70,10 @@
 
 ## Overall Project Status
 **Total Tasks:** 12
-**Completed:** 10
+**Completed:** 12
 **In Progress:** 0
 **Blocked:** 0
-**Overall Completion:** 83.3%
+**Overall Completion:** 100%
 
 **Last Updated:** 2025-06-23
 
@@ -128,12 +128,13 @@
   - **ENHANCED: Real-time browser index synchronization** 
   - **ENHANCED: Bidirectional tab move synchronization (browser ↔ sidebar)**
   - **ENHANCED: Full window tab index refresh on moves**
-  - Comprehensive test suite covering all DND scenarios (117 tests passing)
+  - **BUG FIX: Drag-and-drop index calculation for forward tab moves**
+  - Comprehensive test suite covering all DND scenarios (139 tests passing)
 
 ## Phase 4 Summary
 - **Duration:** Started 2025-06-23  
-- **Tasks Completed:** 1/3 (33%)
-- **Test Coverage:** 136 tests passing (19 new theming tests added)
+- **Tasks Completed:** 3/3 (100%)
+- **Test Coverage:** 165 tests passing (48 new tests added including theming, DND bug fix, i18n, and accessibility tests)
 - **Task 4.1 Deliverables:**
   - **ENHANCED: JavaScript-based theme detection for Chrome extension compatibility**
   - System-aware light/dark theme detection using `matchMedia` API
@@ -144,3 +145,47 @@
   - Real-time theme change detection and application
   - Maintains visual hierarchy and accessibility in both light and dark modes
   - **ENHANCED: 136 tests passing including 13 new theme detection tests**
+- **Task 4.2 Deliverables:**
+  - Complete Chrome extension internationalization (i18n) implementation
+  - Chrome-standard _locales directory structure with en and es translations
+  - chrome.i18n.getMessage() integration throughout UI components
+  - Internationalized manifest.json with __MSG__ placeholders
+  - Comprehensive i18n utility functions with fallbacks
+  - ARIA labels and UI text fully localized
+  - Support for message substitutions and placeholders
+  - 9 new i18n tests covering language switching and message display
+- **Task 4.3 Deliverables:**
+  - Complete WCAG-compliant accessibility implementation
+  - ARIA tree structure with role="tree" for TabTreeComponent
+  - ARIA treeitem roles with proper expanded/collapsed states
+  - Comprehensive keyboard navigation (Arrow keys, Enter, Space)
+  - Focus management with roving tabindex pattern
+  - Screen reader support with descriptive ARIA labels
+  - Hierarchical navigation with aria-level, aria-setsize, aria-posinset
+  - Keyboard expand/collapse functionality for tree branches
+  - Focus trapping and proper tab order management
+  - 17 new accessibility tests covering all ARIA and keyboard features
+
+## Post-Release Issues and Fixes
+
+### Issue: "No tabs available" despite existing tabs
+**Status:** RESOLVED  
+**Date:** 2025-06-24  
+**Description:** Users reported that the sidebar frequently shows "No tabs available" even when browser tabs exist, particularly after extension startup or service worker suspension.
+
+**Root Cause:** Chrome service workers can be suspended and restarted, causing the TabTree hierarchy to be lost without proper re-initialization.
+
+**Solution Implemented:**
+- **Enhanced Background Script Initialization:** Added proactive hierarchy checking in message handlers
+- **Service Worker Wakeup Detection:** Added initialization code that runs when service worker loads/reloads
+- **Automatic Re-initialization:** Background script now detects empty hierarchy and automatically re-initializes from existing browser tabs
+- **Improved Error Handling:** Added refresh button in UI when no tabs are available
+- **Tab Count Validation:** Compares hierarchy tab count with actual browser tab count to detect desync
+
+**Files Modified:**
+- `public/background.js` - Added `ensureHierarchyInitialized()`, `countTabsInHierarchy()`, service worker wakeup handling
+- `src/App.js` - Added "No tabs available" state with refresh button
+- `public/_locales/en/messages.json` and `public/_locales/es/messages.json` - Added "refresh_button" localization
+- `tests/no-tabs-issue-fix.test.js` - 6 new tests covering the fix
+
+**Test Coverage:** 6 new tests (177 total passing)

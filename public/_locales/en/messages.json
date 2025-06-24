@@ -1,0 +1,70 @@
+{
+  "app_title": {
+    "message": "Moose Tabs",
+    "description": "The title of the Moose Tabs extension"
+  },
+  "extension_description": {
+    "message": "Chrome extension that tracks tab hierarchies and parent-child relationships",
+    "description": "Description of the extension functionality"
+  },
+  "action_title": {
+    "message": "Open Moose Tabs",
+    "description": "Title for the browser action button"
+  },
+  "loading_text": {
+    "message": "Loading tab hierarchy...",
+    "description": "Text displayed while loading tabs"
+  },
+  "error_retry_button": {
+    "message": "Retry",
+    "description": "Button text to retry after an error"
+  },
+  "error_communication": {
+    "message": "Error communicating with background script",
+    "description": "Error message when communication with background script fails"
+  },
+  "no_tabs_available": {
+    "message": "No tabs available",
+    "description": "Message shown when there are no tabs to display"
+  },
+  "tab_count": {
+    "message": "You have $COUNT$ tabs open",
+    "description": "Message showing number of open tabs",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "expand_collapse_aria": {
+    "message": "Expand or collapse tab branch",
+    "description": "ARIA label for expand/collapse button"
+  },
+  "tab_item_aria": {
+    "message": "Tab: $TITLE$. Press Enter to select, drag to reorder.",
+    "description": "ARIA label for tab items",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "expand_button_aria": {
+    "message": "Expand",
+    "description": "ARIA label for expand button"
+  },
+  "collapse_button_aria": {
+    "message": "Collapse",
+    "description": "ARIA label for collapse button"
+  },
+  "tree_aria_label": {
+    "message": "Tab hierarchy tree",
+    "description": "ARIA label for the tab tree"
+  },
+  "refresh_button": {
+    "message": "Refresh",
+    "description": "Button text to refresh the tab hierarchy"
+  }
+}

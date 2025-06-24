@@ -1,0 +1,70 @@
+{
+  "app_title": {
+    "message": "Pestañas Moose",
+    "description": "El título de la extensión Pestañas Moose"
+  },
+  "extension_description": {
+    "message": "Extensión de Chrome que rastrea jerarquías de pestañas y relaciones padre-hijo",
+    "description": "Descripción de la funcionalidad de la extensión"
+  },
+  "action_title": {
+    "message": "Abrir Pestañas Moose",
+    "description": "Título para el botón de acción del navegador"
+  },
+  "loading_text": {
+    "message": "Cargando jerarquía de pestañas...",
+    "description": "Texto mostrado mientras se cargan las pestañas"
+  },
+  "error_retry_button": {
+    "message": "Reintentar",
+    "description": "Texto del botón para reintentar después de un error"
+  },
+  "error_communication": {
+    "message": "Error al comunicarse con el script de fondo",
+    "description": "Mensaje de error cuando falla la comunicación con el script de fondo"
+  },
+  "no_tabs_available": {
+    "message": "No hay pestañas disponibles",
+    "description": "Mensaje mostrado cuando no hay pestañas para mostrar"
+  },
+  "tab_count": {
+    "message": "Tienes $COUNT$ pestañas abiertas",
+    "description": "Mensaje mostrando el número de pestañas abiertas",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "expand_collapse_aria": {
+    "message": "Expandir o contraer rama de pestañas",
+    "description": "Etiqueta ARIA para el botón expandir/contraer"
+  },
+  "tab_item_aria": {
+    "message": "Pestaña: $TITLE$. Presiona Enter para seleccionar, arrastra para reordenar.",
+    "description": "Etiqueta ARIA para elementos de pestaña",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Google"
+      }
+    }
+  },
+  "expand_button_aria": {
+    "message": "Expandir",
+    "description": "Etiqueta ARIA para botón expandir"
+  },
+  "collapse_button_aria": {
+    "message": "Contraer",
+    "description": "Etiqueta ARIA para botón contraer"
+  },
+  "tree_aria_label": {
+    "message": "Árbol de jerarquía de pestañas",
+    "description": "Etiqueta ARIA para el árbol de pestañas"
+  },
+  "refresh_button": {
+    "message": "Actualizar",
+    "description": "Texto del botón para actualizar la jerarquía de pestañas"
+  }
+}

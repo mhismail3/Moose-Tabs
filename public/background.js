@@ -24,7 +24,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 });
 
-// Keep service worker alive
+// Keep service worker alive and handle various startup scenarios
 chrome.runtime.onStartup.addListener(async () => {
   console.log('Browser startup detected');
   
@@ -32,6 +32,28 @@ chrome.runtime.onStartup.addListener(async () => {
   tabHierarchy = new TabTree();
   await initializeExistingTabs();
 });
+
+// Handle service worker wakeup (when Chrome reactivates a suspended service worker)
+// This is crucial for preventing "No tabs available" issues
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  // This code runs when the service worker script is loaded/reloaded
+  console.log('Service worker loaded/reloaded - checking if initialization needed');
+  
+  // Small delay to ensure Chrome API is ready
+  setTimeout(async () => {
+    try {
+      if (!tabHierarchy || tabHierarchy.constructor.name !== 'TabTree') {
+        console.log('TabTree not initialized, creating new instance');
+        tabHierarchy = new TabTree();
+      }
+      
+      // Always check if we need to initialize when service worker starts
+      await ensureHierarchyInitialized();
+    } catch (error) {
+      console.error('Error during service worker startup initialization:', error);
+    }
+  }, 100);
+}
 
 // Tab event listeners with enhanced hierarchy tracking and error handling
 chrome.tabs.onCreated.addListener(async (tab) => {
@@ -118,9 +140,17 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     switch (request.action) {
       case 'getTabHierarchy':
       case 'getHierarchy':
-        // For multi-window sync, return ALL tabs unless a specific windowId is requested
+        // Check if hierarchy is empty and re-initialize if needed
         const requestedWindowId = request.windowId;
-        const hierarchy = getHierarchy(requestedWindowId);
+        let hierarchy = getHierarchy(requestedWindowId);
+        
+        // If hierarchy is empty, try to re-initialize from existing tabs
+        if (hierarchy.length === 0) {
+          console.log('Hierarchy is empty, re-initializing from existing tabs');
+          await initializeExistingTabs();
+          hierarchy = getHierarchy(requestedWindowId);
+        }
+        
         sendResponse({ 
           success: true, 
           hierarchy: hierarchy,
@@ -138,6 +168,10 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       case 'sidebarActive':
         console.log('Sidebar became active');
         activeSidebars.add(sender);
+        
+        // Ensure hierarchy is initialized before sending to sidebar
+        await ensureHierarchyInitialized();
+        
         // Send immediate hierarchy update to newly active sidebar with all windows
         const currentHierarchy = getHierarchy(null); // null = all windows
         setTimeout(() => {
@@ -442,6 +476,53 @@ async function initializeExistingTabs() {
   } catch (error) {
     console.error('Failed to initialize existing tabs:', error);
   }
+}
+
+/**
+ * Check if tab hierarchy needs initialization and do it if necessary
+ */
+async function ensureHierarchyInitialized() {
+  try {
+    // Check if we have any tabs in our hierarchy
+    const currentHierarchy = getHierarchy();
+    
+    // Get actual browser tabs to compare
+    const browserTabs = await chrome.tabs.query({});
+    
+    // If we have no hierarchy but browser has tabs, we need to initialize
+    if (currentHierarchy.length === 0 && browserTabs.length > 0) {
+      console.log('Hierarchy is empty but browser has tabs - initializing');
+      await initializeExistingTabs();
+      return true;
+    }
+    
+    // If hierarchy count doesn't match browser tab count, we might need to re-sync
+    const hierarchyTabCount = countTabsInHierarchy(currentHierarchy);
+    if (hierarchyTabCount !== browserTabs.length) {
+      console.log(`Tab count mismatch: hierarchy has ${hierarchyTabCount}, browser has ${browserTabs.length} - re-initializing`);
+      await initializeExistingTabs();
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking hierarchy initialization:', error);
+    return false;
+  }
+}
+
+/**
+ * Count total tabs in hierarchy (including children)
+ */
+function countTabsInHierarchy(hierarchy) {
+  let count = 0;
+  for (const tab of hierarchy) {
+    count += 1; // Count the tab itself
+    if (tab.children && tab.children.length > 0) {
+      count += countTabsInHierarchy(tab.children);
+    }
+  }
+  return count;
 }
 
 /**
