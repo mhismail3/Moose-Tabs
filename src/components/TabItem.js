@@ -22,6 +22,19 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
     });
   };
 
+  const handleTabClick = (e) => {
+    // Don't trigger if clicking on expand/collapse button or close button
+    if (e.target.closest('.expand-collapse-btn') || e.target.closest('.tab-close-btn')) {
+      return;
+    }
+    
+    // Switch to this tab
+    chrome.runtime.sendMessage({
+      action: 'switchToTab',
+      tabId: tab.id
+    });
+  };
+
   const getFaviconUrl = (url) => {
     try {
       const domain = new URL(url).hostname;
@@ -32,7 +45,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
   };
 
   // Extract complex logic into focused hooks
-  const { isDragging, isOver, canDrop, dragDropRef } = useDragDrop(tab, hasChildren);
+  const { isDragging, isOver, canDrop, showInvalid, dragDropRef } = useDragDrop(tab, hasChildren);
   const { handleKeyDown } = useKeyboardNavigation(hasChildren, isExpanded, setIsExpanded);
 
   return (
@@ -40,9 +53,9 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
       <div 
         ref={dragDropRef}
         data-testid={`tab-content-${tab.id}`}
-        className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${isOver && !canDrop ? 'drop-invalid' : ''}`}
+        className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${showInvalid ? 'drop-invalid' : ''}`}
         style={{ 
-          marginLeft: `${level * 20}px`,
+          marginLeft: level === 0 ? 0 : 0,
           opacity: isDragging ? 0.5 : 1
         }}
         draggable={true}
@@ -56,6 +69,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
         onKeyDown={handleKeyDown}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handleTabClick}
       >
         {hasChildren && (
           <button

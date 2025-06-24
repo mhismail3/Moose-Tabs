@@ -12,7 +12,11 @@
   --color-text-muted: #9ca3af;
   --color-border: #e5e7eb;
   --color-border-hover: #9ca3af;
-  --color-accent: #6366f1;
+  --color-accent: #76998e;
+  --color-accent-0: #309976;
+  --color-accent-1: #f59e0b;
+  --color-accent-2: #ef4444;
+  --color-accent-3: #4f44ef;
   --color-error: #ef4444;
   --color-success: #10b981;
   --color-warning: #f59e0b;

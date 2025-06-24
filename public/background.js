@@ -210,6 +210,25 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
           });
         }
         break;
+      case 'switchToTab':
+        console.log('Switch to tab requested:', request.tabId);
+        try {
+          // First get the tab to find its window
+          const tab = await chrome.tabs.get(request.tabId);
+          
+          // Focus the window and then activate the tab
+          await chrome.windows.update(tab.windowId, { focused: true });
+          await chrome.tabs.update(request.tabId, { active: true });
+          
+          sendResponse({ success: true });
+        } catch (error) {
+          console.error('Failed to switch to tab:', error);
+          sendResponse({ 
+            success: false, 
+            error: error.message 
+          });
+        }
+        break;
       default:
         sendResponse({ 
           success: false, 

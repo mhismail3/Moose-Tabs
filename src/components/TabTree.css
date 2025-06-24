@@ -40,7 +40,7 @@
   background: var(--color-bg-overlay);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-sm) var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
   margin-bottom: 2px;
   transition: all var(--transition-normal);
   backdrop-filter: blur(10px);
@@ -52,6 +52,7 @@
   border-color: var(--color-border-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
 }
 
 .tab-content:focus {
@@ -61,71 +62,54 @@
 
 /* Hierarchy Level Colors */
 .tab-level-0 {
-  border-left: 3px solid var(--color-accent);
+  border-left: 5px solid var(--color-accent-0);
 }
 
 .tab-level-1 {
-  border-left: 3px solid var(--color-success);
+  border-left: 5px solid var(--color-accent-1);
 }
 
 .tab-level-2 {
-  border-left: 3px solid var(--color-warning);
+  border-left: 5px solid var(--color-accent-2);
 }
 
 .tab-level-3 {
-  border-left: 3px solid var(--color-error);
+  border-left: 5px solid var(--color-accent-3);
 }
 
 .tab-level-4,
 .tab-level-5,
 .tab-level-6 {
-  border-left: 3px solid #8b5cf6;
+  border-left: 5px solid #6886be;
 }
 
 /* Expand/Collapse Button */
 .expand-collapse-btn {
-  background: var(--color-hover);
-  border: 1px solid var(--color-border-hover);
+  background: transparent;
+  border: none;
   cursor: pointer;
   font-size: var(--text-sm);
   margin-right: var(--space-md);
-  padding: var(--space-sm);
+  padding: var(--space-xs);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   transition: all var(--transition-normal);
-  min-width: var(--space-2xl);
-  height: var(--space-2xl);
+  min-width: var(--space-lg);
+  height: var(--space-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: normal;
 }
 
-.expand-collapse-btn.nested {
-  background: transparent;
-  border: none;
-  padding: var(--space-xs);
-}
-
 .expand-collapse-btn:hover {
   background: rgba(99, 102, 241, 0.2);
-  border-color: var(--color-accent);
   color: var(--color-text-primary);
-  transform: scale(1.1);
-}
-
-.expand-collapse-btn.nested:hover {
-  background: rgba(99, 102, 241, 0.1);
-  border: none;
+  transform: scale(1.2);
 }
 
 .expand-collapse-btn:active {
   transform: scale(0.95);
-}
-
-.expand-collapse-btn:focus {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
 }
 
 /* Tab Favicon */
@@ -212,17 +196,27 @@
 
 /* Tab Children */
 .tab-children {
-  margin-left: var(--space-xl);
+  margin-left: 0;
+  padding-left: 12px;
   border-left: 2px solid var(--color-border);
-  padding-left: var(--space-xl);
-  margin-top: var(--space-sm);
+  margin-top: var(--space-xs);
   position: relative;
+}
+
+.tab-children::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--color-border), transparent);
 }
 
 /* Drag and Drop States */
 .tab-content.dragging {
   opacity: 0.5;
-  transform: rotate(2deg);
+  transform: rotate(-2deg);
   box-shadow: var(--shadow-xl);
   z-index: var(--z-modal);
 }
@@ -231,7 +225,9 @@
   background: rgba(99, 102, 241, 0.2);
   border-color: var(--color-accent);
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-  transform: scale(1.02);
+  transform: scale(1.02) rotate(2deg) translateY(-20px);
+  padding: 15px;
+  margin: 15px 0px;
 }
 
 .tab-content.drop-invalid {
@@ -255,8 +251,7 @@
   }
   
   .tab-children {
-    margin-left: var(--space-md);
-    padding-left: var(--space-md);
+    padding-left: 8px;
   }
   
   .expand-collapse-btn {
@@ -264,15 +259,4 @@
     height: var(--space-xl);
     margin-right: var(--space-sm);
   }
-}
-
-/* Better visual hierarchy for deeper nesting */
-.tab-children::before {
-  content: '';
-  position: absolute;
-  left: -1px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(to bottom, var(--color-border), transparent);
 }
