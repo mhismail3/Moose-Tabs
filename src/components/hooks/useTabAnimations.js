@@ -39,8 +39,8 @@ export function useTabAnimations() {
     });
     notifyListeners();
     
-    // Auto-remove after animation duration
-    const duration = isDisplaced ? 700 : 900; // Displaced animations are shorter
+    // Auto-remove after animation duration - matched to CSS (50% slower)
+    const duration = isDisplaced ? 1000 : 1200; // Matched to slowed CSS durations + buffer
     setTimeout(() => {
       tabIds.forEach(tabId => {
         animationState.animatingTabs.delete(`${tabId}-${animationType}`);

@@ -5,7 +5,7 @@ import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { useTabAnimations } from './hooks/useTabAnimations';
 import './TabTree.css';
 
-function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionInSet = 1 }) {
+function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionInSet = 1, allTabsInWindow }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const hasChildren = tab.children && tab.children.length > 0;
@@ -55,7 +55,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
   };
 
   // Extract complex logic into focused hooks
-  const { isDragging, isOver, canDrop, showInvalid, dragDropRef } = useDragDrop(tab, hasChildren);
+  const { isDragging, isOver, canDrop, showInvalid, dragDropRef } = useDragDrop(tab, hasChildren, undefined, allTabsInWindow);
   const { handleKeyDown } = useKeyboardNavigation(hasChildren, isExpanded, setIsExpanded);
 
   return (
@@ -128,6 +128,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
               isFirst={false}
               totalSiblings={tab.children.length}
               positionInSet={index + 1}
+              allTabsInWindow={allTabsInWindow}
             />
           ))}
         </div>

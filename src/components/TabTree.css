@@ -8,24 +8,33 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  height: 100%;
+  position: relative;
 }
 
-/* Search Bar Container - Sticky at top */
+/* Search Bar Container - Fixed at top */
 .search-bar-container {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
   background: var(--color-bg-primary);
   padding: var(--space-sm);
   border-bottom: 1px solid var(--color-border);
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Search Bar Input Container */
+.search-input-container {
+  position: relative;
+  width: 100%;
 }
 
 /* Search Bar Input */
 .search-bar {
   width: 100%;
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-sm) 40px var(--space-sm) var(--space-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-bg-overlay);
@@ -33,6 +42,43 @@
   font-size: var(--text-base);
   font-family: inherit;
   transition: all var(--transition-normal);
+}
+
+/* Clear Button */
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: bold;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+  opacity: 0;
+}
+
+.search-clear-btn.visible {
+  opacity: 1;
+}
+
+.search-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.search-clear-btn:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 .search-bar:focus {
@@ -51,7 +97,9 @@
 .tab-tree-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: var(--space-sm);
+  height: 0; /* Force flex child to take available height */
 }
 
 /* Empty State */
@@ -78,11 +126,9 @@
   margin-bottom: var(--space-xs);
 }
 
-/* Extended Drop Zone - includes space below tab for better drop targeting */
+/* Extended Drop Zone - visual indicator only, no layout changes */
 .tab-item.drop-zone-active {
-  /* Add padding bottom to create hoverable space below the tab */
-  padding-bottom: 30px;
-  /* Add subtle visual indicator for the drop zone */
+  /* Visual indicator without affecting layout */
   position: relative;
 }
 
@@ -110,7 +156,6 @@
 }
 
 .tab-item.drop-zone-invalid {
-  padding-bottom: 30px;
   position: relative;
 }
 
@@ -134,9 +179,14 @@
   border-radius: var(--radius-lg);
   padding: var(--space-sm) var(--space-md);
   margin-bottom: 2px;
-  transition: all var(--transition-normal);
+  transition: background var(--transition-normal), 
+              border-color var(--transition-normal),
+              box-shadow var(--transition-normal),
+              transform var(--transition-fast);
   backdrop-filter: blur(10px);
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tab-content:hover {
@@ -192,6 +242,7 @@
   align-items: center;
   justify-content: center;
   font-weight: normal;
+  flex-shrink: 0;
 }
 
 .expand-collapse-btn:hover {
@@ -217,6 +268,7 @@
 .tab-info {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .tab-title {
@@ -227,6 +279,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 .tab-url {
@@ -236,6 +289,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0.8;
+  line-height: 1.1;
 }
 
 /* Tab Close Button */
@@ -317,10 +371,7 @@
   background: rgba(99, 241, 170, 0.2);
   border-color: var(--color-accent);
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
-  transform: scale(1.02) rotate(2deg) translateY(-20px);
-  padding: 15px 0;
-  margin: 15px;
-  /* Use transform instead of padding/margin to avoid affecting layout */
+  transform: scale(1.05) translateY(-18px) rotate(3deg);
   position: relative;
   z-index: 10;
 }
@@ -329,69 +380,33 @@
   background: rgba(239, 68, 68, 0.2);
   border-color: var(--color-error);
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+  animation: shake 0.6s ease-in-out;
 }
 
-/* Tab Movement Animations */
+/* Tab Movement Animations - Improved for Smoothness */
 .tab-content.moving-up {
-  animation: slideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tab-content.moving-down {
-  animation: slideDown 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: slideDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Displaced Tab Animations (gentler, faster for secondary movements) */
 .tab-content.displaced-up {
-  animation: displacedSlideUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: displacedSlideUp 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .tab-content.displaced-down {
-  animation: displacedSlideDown 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: displacedSlideDown 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 @keyframes slideUp {
   0% {
-    transform: translateY(60px);
-    opacity: 0.4;
-  }
-  20% {
+    transform: translateY(20px);
     opacity: 0.7;
   }
   60% {
-    transform: translateY(-5px);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideDown {
-  0% {
-    transform: translateY(-60px);
-    opacity: 0.4;
-  }
-  20% {
-    opacity: 0.7;
-  }
-  60% {
-    transform: translateY(5px);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Displaced tab animations - gentler movements */
-@keyframes displacedSlideUp {
-  0% {
-    transform: translateY(40px);
-    opacity: 0.8;
-  }
-  40% {
     transform: translateY(-2px);
     opacity: 0.95;
   }
@@ -401,12 +416,12 @@
   }
 }
 
-@keyframes displacedSlideDown {
+@keyframes slideDown {
   0% {
-    transform: translateY(-40px);
-    opacity: 0.8;
+    transform: translateY(-20px);
+    opacity: 0.7;
   }
-  40% {
+  60% {
     transform: translateY(2px);
     opacity: 0.95;
   }
@@ -416,27 +431,75 @@
   }
 }
 
+/* Displaced tab animations - Very subtle movements */
+@keyframes displacedSlideUp {
+  0% {
+    transform: translateY(12px);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes displacedSlideDown {
+  0% {
+    transform: translateY(-12px);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Shake animation for invalid drop targets */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-3px);
+  }
+  40%, 80% {
+    transform: translateX(3px);
+  }
+}
+
 /* Animation for tabs that appear in new positions */
 .tab-content.repositioning {
-  animation: repositionFade 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: repositionFade 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Smooth transition for drag start/end */
+.tab-content.drag-transitioning {
+  animation: dragTransition 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 @keyframes repositionFade {
   0% {
-    opacity: 0.2;
-    transform: scale(0.9) translateY(10px);
+    opacity: 0.5;
+    transform: scale(0.95) translateY(8px);
   }
-  30% {
-    opacity: 0.6;
-    transform: scale(0.98) translateY(-2px);
-  }
-  70% {
+  60% {
     opacity: 0.9;
-    transform: scale(1.01) translateY(1px);
+    transform: scale(1.02) translateY(-1px);
   }
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dragTransition {
+  0% {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
@@ -451,16 +514,116 @@
 /* Responsive Spacing Adjustments */
 @media (max-width: 320px) {
   .tab-content {
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
   }
   
   .tab-children {
-    padding-left: 8px;
+    padding-left: 6px;
   }
   
   .expand-collapse-btn {
-    min-width: var(--space-xl);
-    height: var(--space-xl);
-    margin-right: var(--space-sm);
+    min-width: var(--space-md);
+    height: var(--space-md);
+    margin-right: var(--space-xs);
+    font-size: 10px;
+  }
+
+  .tab-favicon {
+    width: 12px;
+    height: 12px;
+    margin-right: var(--space-xs);
+  }
+
+  .tab-title {
+    font-size: var(--text-xs);
+    margin-bottom: var(--space-xs);
+  }
+
+  .tab-url {
+    font-size: 10px;
+  }
+
+  .tab-close-btn {
+    width: var(--space-lg);
+    height: var(--space-lg);
+    font-size: var(--text-sm);
+  }
+
+  .search-bar {
+    padding: var(--space-xs) 32px var(--space-xs) var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  .search-clear-btn {
+    width: 20px;
+    height: 20px;
+    right: 6px;
+    font-size: 12px;
+  }
+}
+
+/* Even smaller widths - for very narrow sidebars */
+@media (max-width: 250px) {
+  .tab-content {
+    padding: var(--space-xs);
+  }
+  
+  .tab-children {
+    padding-left: 4px;
+  }
+  
+  .expand-collapse-btn {
+    min-width: var(--space-sm);
+    height: var(--space-sm);
+    margin-right: 2px;
+    font-size: 8px;
+  }
+
+  .tab-favicon {
+    width: 10px;
+    height: 10px;
+    margin-right: 2px;
+  }
+
+  .tab-info {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .tab-title {
+    font-size: 10px;
+    margin-bottom: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tab-url {
+    font-size: 9px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tab-close-btn {
+    width: var(--space-md);
+    height: var(--space-md);
+    font-size: 10px;
+  }
+
+  .search-bar {
+    padding: 4px 28px 4px 6px;
+    font-size: 11px;
+  }
+
+  .search-clear-btn {
+    width: 18px;
+    height: 18px;
+    right: 4px;
+    font-size: 10px;
+  }
+
+  .search-bar-container {
+    padding: 4px;
   }
 }

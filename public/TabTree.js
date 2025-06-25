@@ -114,6 +114,7 @@ class TabTree {
       title: tab.title,
       windowId: tab.windowId,
       index: tab.index,
+      pinned: tab.pinned,
       parentId: tab.parentId,
       createdAt: tab.createdAt
     };

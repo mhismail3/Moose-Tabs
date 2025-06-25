@@ -2,51 +2,45 @@ import { useDrag, useDrop } from 'react-dnd';
 import { useState, useEffect } from 'react';
 import { useTabAnimations } from './useTabAnimations';
 
-export function useDragDrop(tab, hasChildren, onTabMove) {
+export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null) {
   // Debounced isOver state to prevent jittery behavior
   const [debouncedIsOver, setDebouncedIsOver] = useState(false);
   // Track if a drop just completed to prevent flash of invalid state
   const [dropCompleted, setDropCompleted] = useState(false);
   // Track if we should show invalid state (with debouncing)
   const [showInvalid, setShowInvalid] = useState(false);
-  // Track pinned tab drop validity
-  const [isPinnedDropValid, setIsPinnedDropValid] = useState(true);
-  
+
   // Animation management
   const { startAnimation } = useTabAnimations();
-  
-  // Check if drag and drop is valid considering pinned status
-  const isValidPinnedTabDrop = async (draggedTabId, targetTabId) => {
-    try {
-      const [draggedTab, targetTab] = await Promise.all([
-        chrome.tabs.get(draggedTabId),
-        chrome.tabs.get(targetTabId)
-      ]);
-      
-      const allTabs = await chrome.tabs.query({ windowId: targetTab.windowId });
 
-      // If dragged tab is pinned
-      if (draggedTab.pinned) {
-        // Can only drop after another pinned tab
-        return targetTab.pinned;
+  // Synchronous check for pinned tab drop validity
+  function isValidPinnedTabDropSync(draggedTabId, targetTabId) {
+    if (!allTabsInWindow) return true; // fallback for legacy usage
+    const draggedTab = allTabsInWindow.find(t => t.id === draggedTabId);
+    const targetTab = allTabsInWindow.find(t => t.id === targetTabId);
+    if (!draggedTab || !targetTab) return false;
+    
+    // Ensure allTabsInWindow is sorted by index (should be from TabTreeComponent)
+    const pinnedTabs = allTabsInWindow.filter(t => t.pinned);
+    const unpinnedTabs = allTabsInWindow.filter(t => !t.pinned);
+    
+    if (draggedTab.pinned) {
+      // Can only drop after another pinned tab (not after unpinned)
+      return targetTab.pinned;
+    } else {
+      // If dragged tab is not pinned
+      if (targetTab.pinned) {
+        // Can only drop after the last pinned tab (by index)
+        if (pinnedTabs.length === 0) return false;
+        // Find the last pinned tab by index
+        const lastPinnedTab = pinnedTabs.reduce((latest, t) => t.index > latest.index ? t : latest, pinnedTabs[0]);
+        return targetTab.id === lastPinnedTab.id;
       } else {
-        // If dragged tab is not pinned
-        if (targetTab.pinned) {
-          // Can only drop after the last pinned tab
-          const pinnedTabs = allTabs.filter(t => t.pinned);
-          const lastPinnedTab = pinnedTabs.reduce((latest, tab) => 
-            tab.index > latest.index ? tab : latest, pinnedTabs[0]);
-          return targetTab.id === lastPinnedTab.id;
-        } else {
-          // Can drop after any unpinned tab
-          return true;
-        }
+        // Can drop after any unpinned tab
+        return true;
       }
-    } catch (error) {
-      console.error('Error checking pinned tab drop validity:', error);
-      return false;
     }
-  };
+  }
 
   // Check if dropping a tab on another would create a circular dependency
   const wouldCreateCircularDependency = (draggedTabId, targetTabId) => {
@@ -229,7 +223,7 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
           const displacedDirection = isMovingDown ? 'up' : 'down';
           startAnimation(displacedTabs, displacedDirection, true); // true = isDisplaced
         }
-      }, 50); // Small delay to ensure drop target styles have been removed
+      }, 20); // Reduced delay for more immediate and smooth response
       
       // Force refresh of the hierarchy after the move operation completes
       // This ensures the sidebar UI reflects the new tab order immediately
@@ -261,22 +255,15 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
     accept: 'tab',
     drop: (item, monitor) => {
       if (monitor.didDrop()) return; // Already handled by a child
-      
       const draggedTabId = item.tabId;
-      
-      // Mark that a drop completed successfully to prevent red flash
       setDropCompleted(true);
-      // Immediately clear the hover state to prevent animation conflicts
       setDebouncedIsOver(false);
       setTimeout(() => setDropCompleted(false), 200);
-      
-      // Determine drop position based on where exactly the drop occurred
-      // For now, default to making it a child if target has children, sibling otherwise
       const position = hasChildren ? 'child' : 'after';
       handleTabMove(draggedTabId, tab, position);
     },
     canDrop: (item) => {
-      return !wouldCreateCircularDependency(item.tabId, tab.id) && isPinnedDropValid;
+      return !wouldCreateCircularDependency(item.tabId, tab.id) && isValidPinnedTabDropSync(item.tabId, tab.id);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver({ shallow: true }),
@@ -297,7 +284,7 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
       // Add delay when hovering stops to prevent rapid toggling
       timeoutId = setTimeout(() => {
         setDebouncedIsOver(false);
-      }, 100); // 100ms delay
+      }, 25); // Reduced delay to minimize overlap between drop targets
     }
     
     return () => {
@@ -328,25 +315,15 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
     };
   }, [isOver, canDrop, dropCompleted]);
 
-  // Check pinned tab drop validity when dragging
-  useEffect(() => {
-    if (draggedItem && isOver) {
-      isValidPinnedTabDrop(draggedItem.tabId, tab.id)
-        .then(setIsPinnedDropValid)
-        .catch(() => setIsPinnedDropValid(false));
-    } else {
-      setIsPinnedDropValid(true); // Reset when not hovering
-    }
-  }, [draggedItem, isOver, tab.id]);
-
   // Combine drag and drop refs
   const dragDropRef = (node) => {
     drag(drop(node));
   };
 
+  // Return the raw isOver from useDrop, not debouncedIsOver
   return {
     isDragging,
-    isOver: debouncedIsOver,
+    isOver, // use the raw isOver
     canDrop: canDrop && !dropCompleted,
     showInvalid,
     dragDropRef,

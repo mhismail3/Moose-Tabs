@@ -6,6 +6,10 @@ import './TabTree.css';
 function TabTreeComponent({ tabHierarchy = [] }) {
   const [searchTerm, setSearchTerm] = useState('');
 
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
+
   // Fuzzy matching function
   const fuzzyMatch = (text, search) => {
     if (!search) return true;
@@ -52,18 +56,45 @@ function TabTreeComponent({ tabHierarchy = [] }) {
 
   const filteredHierarchy = useMemo(() => filterTabs(tabHierarchy), [tabHierarchy, searchTerm]);
 
+  // Helper to flatten the hierarchy into a flat array of all tabs
+  const flattenTabs = (tabs) => {
+    let flat = [];
+    for (const tab of tabs) {
+      flat.push(tab);
+      if (tab.children && tab.children.length > 0) {
+        flat = flat.concat(flattenTabs(tab.children));
+      }
+    }
+    return flat;
+  };
+  // Sort by index to match browser order
+  const allTabsInWindow = useMemo(() => {
+    const flat = flattenTabs(tabHierarchy);
+    return flat.slice().sort((a, b) => (a.index || 0) - (b.index || 0));
+  }, [tabHierarchy]);
+
   if (!tabHierarchy || tabHierarchy.length === 0) {
     return (
       <div data-testid="tab-tree-container" className="tab-tree">
         <div className="search-bar-container">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search tabs"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            aria-label="Search tabs"
-          />
+          <div className="search-input-container">
+            <input
+              type="text"
+              className="search-bar"
+              placeholder="Search tabs"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search tabs"
+            />
+            <button
+              className={`search-clear-btn ${searchTerm.trim() ? 'visible' : ''}`}
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+              type="button"
+            >
+              ×
+            </button>
+          </div>
         </div>
         <div className="empty-state">{getMessage('no_tabs_available', [], 'No tabs available')}</div>
       </div>
@@ -73,14 +104,24 @@ function TabTreeComponent({ tabHierarchy = [] }) {
   return (
     <div data-testid="tab-tree-container" className="tab-tree">
       <div className="search-bar-container">
-        <input
-          type="text"
-          className="search-bar"
-          placeholder="Search tabs..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          aria-label="Search tabs"
-        />
+        <div className="search-input-container">
+          <input
+            type="text"
+            className="search-bar"
+            placeholder="Search tabs"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search tabs"
+          />
+          <button
+            className={`search-clear-btn ${searchTerm.trim() ? 'visible' : ''}`}
+            onClick={handleClearSearch}
+            aria-label="Clear search"
+            type="button"
+          >
+            ×
+          </button>
+        </div>
       </div>
       <div 
         className="tab-tree-content"
@@ -98,6 +139,7 @@ function TabTreeComponent({ tabHierarchy = [] }) {
               isFirst={index === 0}
               totalSiblings={filteredHierarchy.length}
               positionInSet={index + 1}
+              allTabsInWindow={allTabsInWindow}
             />
           ))
         )}
