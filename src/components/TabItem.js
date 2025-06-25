@@ -2,12 +2,21 @@ import React, { useState } from 'react';
 import { getTabItemAriaLabel, getMessage } from '../utils/i18n';
 import { useDragDrop } from './hooks/useDragDrop';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
+import { useTabAnimations } from './hooks/useTabAnimations';
 import './TabTree.css';
 
 function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionInSet = 1 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const hasChildren = tab.children && tab.children.length > 0;
+  
+  // Animation management
+  const { subscribe, isAnimating } = useTabAnimations();
+  
+  // Subscribe to animation state changes
+  React.useEffect(() => {
+    return subscribe();
+  }, [subscribe]);
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
@@ -53,7 +62,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
       <div 
         ref={dragDropRef}
         data-testid={`tab-content-${tab.id}`}
-        className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${showInvalid ? 'drop-invalid' : ''}`}
+        className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${showInvalid ? 'drop-invalid' : ''} ${isAnimating(tab.id, 'up') ? 'moving-up' : ''} ${isAnimating(tab.id, 'down') ? 'moving-down' : ''} ${isAnimating(tab.id, 'displaced-up') ? 'displaced-up' : ''} ${isAnimating(tab.id, 'displaced-down') ? 'displaced-down' : ''}`}
         style={{ 
           marginLeft: level === 0 ? 0 : 0,
           opacity: isDragging ? 0.5 : 1

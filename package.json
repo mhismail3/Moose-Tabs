@@ -1,7 +1,7 @@
 {
   "name": "moose-tabs",
   "version": "1.0.0",
-  "description": "Chrome extension that tracks tab hierarchies",
+  "description": "Designed for today’s browsing, Moose Tabs helps you effortlessly track, organize, and visualize tab hierarchies with a clear tree view.",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch",

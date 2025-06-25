@@ -1,5 +1,6 @@
 import { useDrag, useDrop } from 'react-dnd';
 import { useState, useEffect } from 'react';
+import { useTabAnimations } from './useTabAnimations';
 
 export function useDragDrop(tab, hasChildren, onTabMove) {
   // Debounced isOver state to prevent jittery behavior
@@ -8,6 +9,9 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
   const [dropCompleted, setDropCompleted] = useState(false);
   // Track if we should show invalid state (with debouncing)
   const [showInvalid, setShowInvalid] = useState(false);
+  
+  // Animation management
+  const { startAnimation } = useTabAnimations();
   
   // Check if dropping a tab on another would create a circular dependency
   const wouldCreateCircularDependency = (draggedTabId, targetTabId) => {
@@ -148,6 +152,50 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
         }
       }
       
+      // Calculate which tabs get displaced and need animation
+      const draggedTabIndices = tabsToMove.map(tabId => {
+        return allTabsInWindow.find(t => t.id === tabId)?.index;
+      }).filter(index => index !== undefined);
+      
+      const minDraggedIndex = Math.min(...draggedTabIndices);
+      const maxDraggedIndex = Math.max(...draggedTabIndices);
+      
+      // Find tabs that will be displaced
+      const displacedTabs = [];
+      
+      if (isMovingDown) {
+        // Moving down: tabs between original position and target shift UP
+        for (const browserTab of allTabsInWindow) {
+          const tabIndex = browserTab.index;
+          if (tabIndex > maxDraggedIndex && tabIndex <= currentTargetTab.index) {
+            displacedTabs.push(browserTab.id);
+          }
+        }
+      } else {
+        // Moving up: tabs between target and original position shift DOWN  
+        for (const browserTab of allTabsInWindow) {
+          const tabIndex = browserTab.index;
+          if (tabIndex >= targetIndex && tabIndex < minDraggedIndex) {
+            displacedTabs.push(browserTab.id);
+          }
+        }
+      }
+      
+      console.log(`Displaced tabs: ${displacedTabs.join(', ')}`);
+      
+      // Small delay to ensure UI has settled after drop target styles are removed
+      setTimeout(() => {
+        // Trigger animations for the moved tabs
+        const direction = isMovingDown ? 'down' : 'up';
+        startAnimation(tabsToMove, direction);
+        
+        // Trigger animations for displaced tabs (they move in opposite direction)
+        if (displacedTabs.length > 0) {
+          const displacedDirection = isMovingDown ? 'up' : 'down';
+          startAnimation(displacedTabs, displacedDirection, true); // true = isDisplaced
+        }
+      }, 50); // Small delay to ensure drop target styles have been removed
+      
       // Force refresh of the hierarchy after the move operation completes
       // This ensures the sidebar UI reflects the new tab order immediately
       setTimeout(async () => {
@@ -183,6 +231,8 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
       
       // Mark that a drop completed successfully to prevent red flash
       setDropCompleted(true);
+      // Immediately clear the hover state to prevent animation conflicts
+      setDebouncedIsOver(false);
       setTimeout(() => setDropCompleted(false), 200);
       
       // Determine drop position based on where exactly the drop occurred

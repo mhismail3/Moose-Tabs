@@ -4,7 +4,7 @@
     "description": "The title of the Moose Tabs extension"
   },
   "extension_description": {
-    "message": "Chrome extension that tracks tab hierarchies and parent-child relationships",
+    "message": "Designed for today’s browsing, Moose Tabs helps you effortlessly track, organize, and visualize tab hierarchies with a clear tree view.",
     "description": "Description of the extension functionality"
   },
   "action_title": {
