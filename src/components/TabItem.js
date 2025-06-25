@@ -47,6 +47,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
   const getFaviconUrl = (url) => {
     try {
       const domain = new URL(url).hostname;
+      
       return `https://www.google.com/s2/favicons?sz=16&domain=${domain}`;
     } catch (e) {
       return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMTZBOCA4IDAgMSAxIDggMEE4IDggMCAwIDEgOCAxNloiIGZpbGw9IiNGM0Y0RjYiLz4KPHA+PC9wPgo8L3N2Zz4K'; // Default favicon
@@ -58,9 +59,11 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
   const { handleKeyDown } = useKeyboardNavigation(hasChildren, isExpanded, setIsExpanded);
 
   return (
-    <div className="tab-item">
+    <div 
+      className={`tab-item ${isOver && canDrop ? 'drop-zone-active' : ''} ${showInvalid ? 'drop-zone-invalid' : ''}`}
+      ref={dragDropRef}
+    >
       <div 
-        ref={dragDropRef}
         data-testid={`tab-content-${tab.id}`}
         className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${showInvalid ? 'drop-invalid' : ''} ${isAnimating(tab.id, 'up') ? 'moving-up' : ''} ${isAnimating(tab.id, 'down') ? 'moving-down' : ''} ${isAnimating(tab.id, 'displaced-up') ? 'displaced-up' : ''} ${isAnimating(tab.id, 'displaced-down') ? 'displaced-down' : ''}`}
         style={{ 
@@ -95,7 +98,9 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
           alt=""
           className="tab-favicon"
           onError={(e) => {
-            e.target.style.display = 'none';
+            // Replace with fallback favicon instead of hiding
+            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMTZBOCA4IDAgMSExIDggMEE4IDggMCAwIDEgOCAxNloiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjIiIGZpbGw9IiM2Mzc0ODEiLz4KPC9zdmc+';
+            e.target.onError = null; // Prevent infinite error loop
           }}
         />
         <div className="tab-info">

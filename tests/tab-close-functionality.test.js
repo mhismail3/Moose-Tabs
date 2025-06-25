@@ -152,8 +152,9 @@ describe('Tab Close Functionality', () => {
     // Trigger error event
     fireEvent.error(favicon);
     
-    // Favicon should be hidden on error
-    expect(favicon.style.display).toBe('none');
+    // Favicon should show fallback image instead of being hidden
+    expect(favicon.src).toContain('data:image/svg+xml;base64');
+    expect(favicon.style.display).not.toBe('none');
   });
 
   test('favicon works with invalid URLs', () => {

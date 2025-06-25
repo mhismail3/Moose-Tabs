@@ -5,9 +5,53 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: var(--text-base);
   color: var(--color-text-secondary);
-  padding: var(--space-sm) var(--space-sm) var(--space-sm) var(--space-sm);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Search Bar Container - Sticky at top */
+.search-bar-container {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--color-bg-primary);
+  padding: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(10px);
+}
+
+/* Search Bar Input */
+.search-bar {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-overlay);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  font-family: inherit;
+  transition: all var(--transition-normal);
+}
+
+.search-bar:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  background: var(--color-bg-primary);
+}
+
+.search-bar::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+/* Tab Tree Content - Scrollable area */
+.tab-tree-content {
   flex: 1;
   overflow-y: auto;
+  padding: var(--space-sm);
 }
 
 /* Empty State */
@@ -20,6 +64,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-md);
+  margin-top: var(--space-xl);
 }
 
 .empty-state::before {
@@ -31,6 +76,53 @@
 /* Tab Item Container */
 .tab-item {
   margin-bottom: var(--space-xs);
+}
+
+/* Extended Drop Zone - includes space below tab for better drop targeting */
+.tab-item.drop-zone-active {
+  /* Add padding bottom to create hoverable space below the tab */
+  padding-bottom: 30px;
+  /* Add subtle visual indicator for the drop zone */
+  position: relative;
+}
+
+.tab-item.drop-zone-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 2px;
+  animation: dropZonePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dropZonePulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scaleX(0.8);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleX(1);
+  }
+}
+
+.tab-item.drop-zone-invalid {
+  padding-bottom: 30px;
+  position: relative;
+}
+
+.tab-item.drop-zone-invalid::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: rgba(239, 68, 68, 0.6);
+  border-radius: 2px;
 }
 
 /* Tab Content */
@@ -226,6 +318,8 @@
   border-color: var(--color-accent);
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
   transform: scale(1.02) rotate(2deg) translateY(-20px);
+  padding: 15px 0;
+  margin: 15px;
   /* Use transform instead of padding/margin to avoid affecting layout */
   position: relative;
   z-index: 10;

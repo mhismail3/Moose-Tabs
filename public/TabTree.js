@@ -15,7 +15,7 @@ class TabTree {
 
   /**
    * Add a tab to the hierarchy
-   * @param {Object} tab - Tab object with id, url, title, windowId, index, openerTabId
+   * @param {Object} tab - Tab object with id, url, title, windowId, index, openerTabId, pinned
    */
   addTab(tab) {
     if (!tab || typeof tab.id !== 'number') {
@@ -29,6 +29,7 @@ class TabTree {
       title: tab.title,
       windowId: tab.windowId,
       index: tab.index,
+      pinned: tab.pinned || false,
       parentId: null,
       children: new Set(),
       createdAt: Date.now()

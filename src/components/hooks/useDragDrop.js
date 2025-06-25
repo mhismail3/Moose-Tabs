@@ -9,10 +9,45 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
   const [dropCompleted, setDropCompleted] = useState(false);
   // Track if we should show invalid state (with debouncing)
   const [showInvalid, setShowInvalid] = useState(false);
+  // Track pinned tab drop validity
+  const [isPinnedDropValid, setIsPinnedDropValid] = useState(true);
   
   // Animation management
   const { startAnimation } = useTabAnimations();
   
+  // Check if drag and drop is valid considering pinned status
+  const isValidPinnedTabDrop = async (draggedTabId, targetTabId) => {
+    try {
+      const [draggedTab, targetTab] = await Promise.all([
+        chrome.tabs.get(draggedTabId),
+        chrome.tabs.get(targetTabId)
+      ]);
+      
+      const allTabs = await chrome.tabs.query({ windowId: targetTab.windowId });
+
+      // If dragged tab is pinned
+      if (draggedTab.pinned) {
+        // Can only drop after another pinned tab
+        return targetTab.pinned;
+      } else {
+        // If dragged tab is not pinned
+        if (targetTab.pinned) {
+          // Can only drop after the last pinned tab
+          const pinnedTabs = allTabs.filter(t => t.pinned);
+          const lastPinnedTab = pinnedTabs.reduce((latest, tab) => 
+            tab.index > latest.index ? tab : latest, pinnedTabs[0]);
+          return targetTab.id === lastPinnedTab.id;
+        } else {
+          // Can drop after any unpinned tab
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('Error checking pinned tab drop validity:', error);
+      return false;
+    }
+  };
+
   // Check if dropping a tab on another would create a circular dependency
   const wouldCreateCircularDependency = (draggedTabId, targetTabId) => {
     const findInHierarchy = (tabList, searchId) => {
@@ -222,7 +257,7 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
   });
 
   // Drop target configuration
-  const [{ isOver, canDrop }, drop] = useDrop({
+  const [{ isOver, canDrop, draggedItem }, drop] = useDrop({
     accept: 'tab',
     drop: (item, monitor) => {
       if (monitor.didDrop()) return; // Already handled by a child
@@ -241,11 +276,12 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
       handleTabMove(draggedTabId, tab, position);
     },
     canDrop: (item) => {
-      return !wouldCreateCircularDependency(item.tabId, tab.id);
+      return !wouldCreateCircularDependency(item.tabId, tab.id) && isPinnedDropValid;
     },
     collect: (monitor) => ({
       isOver: monitor.isOver({ shallow: true }),
       canDrop: monitor.canDrop(),
+      draggedItem: monitor.getItem(),
     }),
   });
 
@@ -291,6 +327,17 @@ export function useDragDrop(tab, hasChildren, onTabMove) {
       }
     };
   }, [isOver, canDrop, dropCompleted]);
+
+  // Check pinned tab drop validity when dragging
+  useEffect(() => {
+    if (draggedItem && isOver) {
+      isValidPinnedTabDrop(draggedItem.tabId, tab.id)
+        .then(setIsPinnedDropValid)
+        .catch(() => setIsPinnedDropValid(false));
+    } else {
+      setIsPinnedDropValid(true); // Reset when not hovering
+    }
+  }, [draggedItem, isOver, tab.id]);
 
   // Combine drag and drop refs
   const dragDropRef = (node) => {
