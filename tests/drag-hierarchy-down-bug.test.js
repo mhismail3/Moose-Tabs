@@ -5,7 +5,7 @@
  */
 
 import { useDragDrop } from '../src/components/hooks/useDragDrop';
-import { renderHookWithDropZoneProviderWithDropZoneProvider } from './test-utils';
+import { renderHookWithDropZoneProvider } from './test-utils';
 
 // Mock Chrome APIs
 global.chrome = {

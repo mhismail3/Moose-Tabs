@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { screen, fireEvent, waitFor, renderWithDropZoneProvider } from './test-utils';
+import { render, screen, fireEvent, waitFor, renderWithDropZoneProvider } from './test-utils';
 import App from '../src/App';
 import TabTreeComponent from '../src/components/TabTreeComponent';
 import TabItem from '../src/components/TabItem';

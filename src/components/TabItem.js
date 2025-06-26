@@ -60,6 +60,127 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
   const { isDragging, isOver, canDrop, showInvalid, dropZoneType, dragDropRef } = useDragDrop(tab, hasChildren, undefined, allTabsInWindow, level);
   const { handleKeyDown } = useKeyboardNavigation(hasChildren, isExpanded, setIsExpanded);
 
+  // Create custom drag image for better visual preview
+  const createCustomDragImage = React.useCallback((sourceElement) => {
+    // Get computed styles from the source element to resolve CSS variables
+    const computedStyles = window.getComputedStyle(document.documentElement);
+    const bgOverlay = computedStyles.getPropertyValue('--color-bg-overlay').trim() || 'rgba(255, 255, 255, 0.95)';
+    const colorBorder = computedStyles.getPropertyValue('--color-border').trim() || 'rgba(229, 231, 235, 1)';
+    const radiusLg = computedStyles.getPropertyValue('--radius-lg').trim() || '12px';
+    const spaceSm = computedStyles.getPropertyValue('--space-sm').trim() || '8px';
+    const spaceMd = computedStyles.getPropertyValue('--space-md').trim() || '12px';
+    
+    const dragPreview = document.createElement('div');
+    dragPreview.style.cssText = `
+      position: absolute;
+      top: -2000px;
+      left: -2000px;
+      pointer-events: none;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    `;
+    
+    // Clone only the tab-content element (not children)
+    const tabContent = sourceElement.querySelector('.tab-content');
+    if (!tabContent) return dragPreview;
+    
+    const clonedElement = tabContent.cloneNode(true);
+    
+    // Apply styles using resolved CSS variables
+    clonedElement.style.cssText = `
+      display: flex;
+      align-items: center;
+      background: ${bgOverlay};
+      border: 1px solid ${colorBorder};
+      border-radius: ${radiusLg};
+      padding: ${spaceSm} ${spaceMd};
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+      transform: rotate(-2deg);
+      opacity: 0.95;
+      position: relative;
+      max-width: 300px;
+      backdrop-filter: blur(12px);
+      cursor: grabbing;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      z-index: 100;
+    `;
+    
+    // Apply the correct level border color
+    const levelClass = Array.from(tabContent.classList).find(cls => cls.startsWith('tab-level-'));
+    if (levelClass) {
+      const levelNum = levelClass.split('-')[2];
+      const accentColors = {
+        '0': 'rgba(34, 197, 94, 1)',   // green
+        '1': 'rgba(245, 158, 11, 1)',  // yellow
+        '2': 'rgba(239, 68, 68, 1)',   // red
+        '3': 'rgba(79, 68, 239, 1)',   // blue
+      };
+      const accentColor = accentColors[levelNum] || 'rgba(104, 134, 190, 1)';
+      clonedElement.style.borderLeft = `5px solid ${accentColor}`;
+    }
+    
+    // If has children, add stack effect with resolved colors
+    if (hasChildren) {
+      // Create first stack layer
+      const stackLayer1 = document.createElement('div');
+      stackLayer1.style.cssText = `
+        position: absolute;
+        bottom: -4px;
+        left: 3px;
+        right: 3px;
+        height: 8px;
+        background: ${bgOverlay};
+        border: 1px solid ${colorBorder};
+        border-radius: ${radiusLg};
+        opacity: 0.8;
+        z-index: -1;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+      `;
+      
+      // Create second stack layer
+      const stackLayer2 = document.createElement('div');
+      stackLayer2.style.cssText = `
+        position: absolute;
+        bottom: -8px;
+        left: 6px;
+        right: 6px;
+        height: 8px;
+        background: ${bgOverlay};
+        border: 1px solid ${colorBorder};
+        border-radius: ${radiusLg};
+        opacity: 0.6;
+        z-index: -2;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+      `;
+      
+      dragPreview.appendChild(stackLayer1);
+      dragPreview.appendChild(stackLayer2);
+    }
+    
+    dragPreview.appendChild(clonedElement);
+    document.body.appendChild(dragPreview);
+    
+    return dragPreview;
+  }, [hasChildren]);
+
+  // Handle native drag start to set custom drag image
+  const handleDragStart = React.useCallback((e) => {
+    const customDragImage = createCustomDragImage(e.currentTarget);
+    
+    // Set the custom drag image with appropriate offset
+    // The offset positions the cursor relative to the drag image
+    e.dataTransfer.setDragImage(customDragImage, 150, 30);
+    
+    // Clean up the temporary element after drag starts
+    setTimeout(() => {
+      if (customDragImage && customDragImage.parentNode) {
+        document.body.removeChild(customDragImage);
+      }
+    }, 10);
+  }, [createCustomDragImage]);
+
   // Save expansion state and collapse children when dragging starts
   React.useEffect(() => {
     if (isDragging && hasChildren && savedExpandedState === null) {
@@ -129,6 +250,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleTabClick}
+        onDragStart={handleDragStart}
       >
         {hasChildren && (
           <button
