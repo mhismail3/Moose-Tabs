@@ -1,17 +1,42 @@
 import { useDrag, useDrop } from 'react-dnd';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTabAnimations } from './useTabAnimations';
+import { useDropZone } from '../context/DropZoneContext';
 
-export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null) {
-  // Debounced isOver state to prevent jittery behavior
-  const [debouncedIsOver, setDebouncedIsOver] = useState(false);
+export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null, level = 0) {
   // Track if a drop just completed to prevent flash of invalid state
   const [dropCompleted, setDropCompleted] = useState(false);
-  // Track if we should show invalid state (with debouncing)
-  const [showInvalid, setShowInvalid] = useState(false);
+  // Track drop zone type based on mouse position
+  const [dropZoneType, setDropZoneType] = useState(null); // null, 'sibling', 'child'
+  
+  // Ref to track the drop target element
+  const dropTargetRef = useRef(null);
 
   // Animation management
   const { startAnimation } = useTabAnimations();
+  
+  // Centralized drop zone management
+  const { 
+    setDropTarget, 
+    clearDropTarget, 
+    clearAllDropTargets, 
+    isActiveDropTarget, 
+    getDropTargetInfo 
+  } = useDropZone();
+
+  // Calculate drop zone type based on mouse position
+  const calculateDropZoneType = useCallback((clientX, targetElement) => {
+    if (!targetElement) return null;
+    
+    const rect = targetElement.getBoundingClientRect();
+    const relativeX = clientX - rect.left;
+    const width = rect.width;
+    
+    // Use 60% as the threshold - left 60% is sibling, right 40% is child
+    const threshold = width * 0.6;
+    
+    return relativeX < threshold ? 'sibling' : 'child';
+  }, []);
 
   // Synchronous check for pinned tab drop validity
   function isValidPinnedTabDropSync(draggedTabId, targetTabId) {
@@ -86,7 +111,52 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null)
     return descendants;
   };
 
-  // Handle tab move operation
+  // Find the index after the target tab and all its descendants
+  const getInsertIndexAfterFamily = async (targetTab, allTabsInWindow) => {
+    // Get the hierarchy to find all descendants
+    const hierarchyResponse = await chrome.runtime.sendMessage({ action: 'getTabHierarchy' });
+    
+    if (!hierarchyResponse || !hierarchyResponse.success) {
+      return targetTab.index + 1;
+    }
+    
+    // Find the target tab in the hierarchy
+    const findTabInHierarchy = (tabs, targetId) => {
+      for (const t of tabs) {
+        if (t.id === targetId) return t;
+        if (t.children) {
+          const found = findTabInHierarchy(t.children, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    const targetTabWithHierarchy = findTabInHierarchy(hierarchyResponse.hierarchy, targetTab.id);
+    if (!targetTabWithHierarchy) {
+      return targetTab.index + 1;
+    }
+    
+    // Get all descendants
+    const descendants = getAllDescendants(targetTabWithHierarchy);
+    
+    if (descendants.length === 0) {
+      return targetTab.index + 1;
+    }
+    
+    // Find the highest index among target and its descendants
+    let maxIndex = targetTab.index;
+    for (const descendant of descendants) {
+      const browserTab = allTabsInWindow.find(t => t.id === descendant.id);
+      if (browserTab && browserTab.index > maxIndex) {
+        maxIndex = browserTab.index;
+      }
+    }
+    
+    return maxIndex + 1;
+  };
+
+  // Handle tab move operation with enhanced position support
   const handleTabMove = async (draggedTabId, targetTab, position = 'after') => {
     try {
       // Prevent circular dependencies
@@ -103,6 +173,7 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null)
       ]);
 
       console.log(`Target tab current index: ${currentTargetTab.index}, Dragged tab current index: ${currentDraggedTab.index}, Total tabs in window: ${allTabsInWindow.length}`);
+      console.log(`Drop position: ${position}`);
 
       // Get the complete hierarchy for this tab to find all descendants
       const hierarchyResponse = await chrome.runtime.sendMessage({ action: 'getTabHierarchy' });
@@ -132,53 +203,112 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null)
 
       console.log(`Moving tab group: ${tabsToMove.join(', ')}`);
 
-      let targetIndex = currentTargetTab.index + 1; // Default: move after target
+      let targetIndex;
+      let parentTabId = null;
+
+      if (position === 'child') {
+        // Moving as a child - position right after target
+        targetIndex = currentTargetTab.index + 1;
+        parentTabId = targetTab.id;
+        console.log(`Moving as child of tab ${targetTab.id}`);
+      } else {
+        // Moving as sibling - position after target and all its descendants
+        targetIndex = await getInsertIndexAfterFamily(currentTargetTab, allTabsInWindow);
+        console.log(`Moving as sibling after tab family, target index: ${targetIndex}`);
+      }
 
       // Check if we're moving the tabs down (after target) or up (before target)
       const firstTabIndex = allTabsInWindow.find(t => t.id === tabsToMove[0])?.index;
-      const isMovingDown = firstTabIndex < currentTargetTab.index;
+      const isMovingDown = firstTabIndex < targetIndex;
 
-      if (position === 'child') {
-        // Moving as a child - position after target (since we don't have true parent-child in browser)
-        targetIndex = currentTargetTab.index + 1;
+      // For single tab moves, we need to handle downward vs upward movement differently
+      if (tabsToMove.length === 1) {
+        let finalIndex = targetIndex;
+        
+        // When moving DOWN, we need to account for the fact that removing the dragged tab
+        // shifts the indices of tabs below it down by 1
+        if (isMovingDown) {
+          finalIndex = targetIndex - 1;
+        }
+        
+        const moveParams = {
+          index: finalIndex,
+          windowId: targetTab.windowId
+        };
+        
+        console.log(`Moving single tab ${tabsToMove[0]} to index ${moveParams.index} in window ${moveParams.windowId} (${isMovingDown ? 'down' : 'up'}, targetIndex was ${targetIndex})`);
+        await chrome.tabs.move(tabsToMove[0], moveParams);
+      } else {
+        // For multi-tab moves (with children), we need the more complex logic
+        if (isMovingDown) {
+          // When moving DOWN: tabs are currently before target
+          // We need to account for the fact that removing tabs shifts indices
+          const draggedTabsBeforeTarget = tabsToMove.filter(tabId => {
+            const tab = allTabsInWindow.find(t => t.id === tabId);
+            return tab && tab.index < targetIndex;
+          }).length;
+          
+          const adjustedTargetIndex = targetIndex - draggedTabsBeforeTarget;
+          
+          // Move tabs in reverse order (children first, then parent) to avoid index shifting issues
+          console.log(`Moving tab group down to index ${adjustedTargetIndex}`);
+          for (let i = tabsToMove.length - 1; i >= 0; i--) {
+            const tabId = tabsToMove[i];
+            const moveParams = {
+              index: adjustedTargetIndex + i,
+              windowId: targetTab.windowId
+            };
+            
+            console.log(`Moving tab ${tabId} to index ${moveParams.index} in window ${moveParams.windowId}`);
+            await chrome.tabs.move(tabId, moveParams);
+          }
+        } else {
+          // When moving UP: tabs are currently after target
+          // No index adjustment needed, move tabs sequentially
+          console.log(`Moving tab group up to index ${targetIndex}`);
+          for (let i = 0; i < tabsToMove.length; i++) {
+            const tabId = tabsToMove[i];
+            const moveParams = {
+              index: targetIndex + i,
+              windowId: targetTab.windowId
+            };
+            
+            console.log(`Moving tab ${tabId} to index ${moveParams.index} in window ${moveParams.windowId}`);
+            await chrome.tabs.move(tabId, moveParams);
+          }
+        }
       }
 
-      if (isMovingDown) {
-        // When moving DOWN: tabs are currently before target
-        // We need to account for the fact that removing tabs shifts indices
-        const draggedTabsBeforeTarget = tabsToMove.filter(tabId => {
-          const tab = allTabsInWindow.find(t => t.id === tabId);
-          return tab && tab.index < currentTargetTab.index;
-        }).length;
-        
-        targetIndex = currentTargetTab.index - draggedTabsBeforeTarget + 1;
-        
-        // Move tabs in reverse order (children first, then parent) to avoid index shifting issues
-        console.log(`Moving tab group down to index ${targetIndex}`);
-        for (let i = tabsToMove.length - 1; i >= 0; i--) {
-          const tabId = tabsToMove[i];
-          const moveParams = {
-            index: targetIndex + i,
-            windowId: targetTab.windowId
-          };
-          
-          console.log(`Moving tab ${tabId} to index ${moveParams.index} in window ${moveParams.windowId}`);
-          await chrome.tabs.move(tabId, moveParams);
-        }
+      // Update hierarchy relationships in the background
+      if (position === 'child') {
+        console.log(`Setting parent relationship: ${draggedTabId} -> parent: ${parentTabId}`);
+        await chrome.runtime.sendMessage({
+          action: 'updateParentRelationship',
+          tabId: draggedTabId,
+          parentId: parentTabId
+        });
       } else {
-        // When moving UP: tabs are currently after target
-        // No index adjustment needed, move tabs sequentially
-        console.log(`Moving tab group up to index ${targetIndex}`);
-        for (let i = 0; i < tabsToMove.length; i++) {
-          const tabId = tabsToMove[i];
-          const moveParams = {
-            index: targetIndex + i,
-            windowId: targetTab.windowId
-          };
-          
-          console.log(`Moving tab ${tabId} to index ${moveParams.index} in window ${moveParams.windowId}`);
-          await chrome.tabs.move(tabId, moveParams);
+        // For sibling drops, we need to determine the appropriate parent
+        // If dropping after a child, inherit the same parent
+        // If dropping after a parent, become a sibling with no parent
+        let newParentId = null;
+        
+        // Get target tab's parent relationship
+        const targetHierarchyResponse = await chrome.runtime.sendMessage({ 
+          action: 'getTabParent', 
+          tabId: targetTab.id 
+        });
+        
+        if (targetHierarchyResponse && targetHierarchyResponse.success && targetHierarchyResponse.parentId) {
+          newParentId = targetHierarchyResponse.parentId;
         }
+        
+        console.log(`Setting sibling relationship: ${draggedTabId} -> parent: ${newParentId || 'none'}`);
+        await chrome.runtime.sendMessage({
+          action: 'updateParentRelationship',
+          tabId: draggedTabId,
+          parentId: newParentId
+        });
       }
       
       // Calculate which tabs get displaced and need animation
@@ -196,7 +326,7 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null)
         // Moving down: tabs between original position and target shift UP
         for (const browserTab of allTabsInWindow) {
           const tabIndex = browserTab.index;
-          if (tabIndex > maxDraggedIndex && tabIndex <= currentTargetTab.index) {
+          if (tabIndex > maxDraggedIndex && tabIndex < targetIndex) {
             displacedTabs.push(browserTab.id);
           }
         }
@@ -250,17 +380,42 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null)
     }),
   });
 
-  // Drop target configuration
+  // Drop target configuration with centralized state management
   const [{ isOver, canDrop, draggedItem }, drop] = useDrop({
     accept: 'tab',
     drop: (item, monitor) => {
       if (monitor.didDrop()) return; // Already handled by a child
       const draggedTabId = item.tabId;
       setDropCompleted(true);
-      setDebouncedIsOver(false);
+      clearAllDropTargets(); // Clear all drop targets immediately
       setTimeout(() => setDropCompleted(false), 200);
-      const position = hasChildren ? 'child' : 'after';
+      
+      // Use the dropZoneType to determine position
+      const position = dropZoneType === 'child' ? 'child' : 'sibling';
+      console.log(`Dropping with position: ${position}, dropZoneType: ${dropZoneType}`);
       handleTabMove(draggedTabId, tab, position);
+    },
+    hover: (item, monitor) => {
+      // Only process hover if this tab can accept the drop
+      const canAcceptDrop = !wouldCreateCircularDependency(item.tabId, tab.id) && 
+                           isValidPinnedTabDropSync(item.tabId, tab.id);
+      
+      if (!canAcceptDrop) {
+        // Set this as active drop target with invalid state
+        setDropTarget(tab.id, level, null, false, true);
+        setDropZoneType(null);
+        return;
+      }
+
+      // Track mouse position for drop zone type calculation
+      const clientOffset = monitor.getClientOffset();
+      if (clientOffset && dropTargetRef.current) {
+        const newDropZoneType = calculateDropZoneType(clientOffset.x, dropTargetRef.current);
+        setDropZoneType(newDropZoneType);
+        
+        // Update centralized drop target state
+        setDropTarget(tab.id, level, newDropZoneType, true, false);
+      }
     },
     canDrop: (item) => {
       return !wouldCreateCircularDependency(item.tabId, tab.id) && isValidPinnedTabDropSync(item.tabId, tab.id);
@@ -272,60 +427,38 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null)
     }),
   });
 
-  // Debounce isOver state to prevent jittery behavior when hovering near edges
+  // Clear drop target when not hovering
   useEffect(() => {
-    let timeoutId;
-    
-    if (isOver && canDrop) {
-      // Immediately set to true when hovering starts
-      setDebouncedIsOver(true);
-      setShowInvalid(false); // Clear any invalid state
-    } else {
-      // Add delay when hovering stops to prevent rapid toggling
-      timeoutId = setTimeout(() => {
-        setDebouncedIsOver(false);
-      }, 25); // Reduced delay to minimize overlap between drop targets
+    if (!isOver) {
+      clearDropTarget(tab.id);
+      setDropZoneType(null);
     }
-    
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [isOver, canDrop]);
+  }, [isOver, clearDropTarget, tab.id]);
 
-  // Handle invalid state with debouncing to prevent red flash after drops
+  // Clear all drop targets when dragging ends
   useEffect(() => {
-    let timeoutId;
-    
-    if (isOver && !canDrop && !dropCompleted) {
-      // Show invalid state immediately, but only if not just after a drop
-      timeoutId = setTimeout(() => {
-        setShowInvalid(true);
-      }, 50); // Small delay to prevent flash
-    } else {
-      // Hide invalid state immediately
-      setShowInvalid(false);
+    if (!draggedItem) {
+      clearAllDropTargets();
+      setDropZoneType(null);
     }
-    
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [isOver, canDrop, dropCompleted]);
+  }, [draggedItem, clearAllDropTargets]);
 
-  // Combine drag and drop refs
-  const dragDropRef = (node) => {
+  // Combine drag and drop refs with the target ref
+  const dragDropRef = useCallback((node) => {
+    dropTargetRef.current = node;
     drag(drop(node));
-  };
+  }, [drag, drop]);
 
-  // Return the raw isOver from useDrop, not debouncedIsOver
+  // Get centralized drop target info for this tab
+  const dropTargetInfo = getDropTargetInfo(tab.id);
+  const isThisTabActiveDropTarget = isActiveDropTarget(tab.id);
+  
   return {
     isDragging,
-    isOver, // use the raw isOver
-    canDrop: canDrop && !dropCompleted,
-    showInvalid,
+    isOver: isThisTabActiveDropTarget, // Only true for the active drop target
+    canDrop: isThisTabActiveDropTarget && dropTargetInfo?.canDrop && !dropCompleted,
+    showInvalid: isThisTabActiveDropTarget && dropTargetInfo?.showInvalid,
+    dropZoneType: isThisTabActiveDropTarget ? dropTargetInfo?.dropZoneType : null,
     dragDropRef,
     handleTabMove
   };

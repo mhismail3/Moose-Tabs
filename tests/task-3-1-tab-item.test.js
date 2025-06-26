@@ -3,7 +3,7 @@
  * TDD Test: Component test for TabItem with expand/collapse functionality
  */
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, renderWithDropZoneProvider } from './test-utils';
 import TabItem from '../src/components/TabItem';
 
 describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
@@ -35,7 +35,7 @@ describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
   };
 
   test('renders tab item with expand/collapse button when it has children', () => {
-    render(<TabItem tab={mockTabWithChildren} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTabWithChildren} level={0} />);
     
     // Should show the tab content
     expect(screen.getByText('Parent Tab')).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
   });
 
   test('does not render expand/collapse button when tab has no children', () => {
-    render(<TabItem tab={mockTabWithoutChildren} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTabWithoutChildren} level={0} />);
     
     // Should show the tab content
     expect(screen.getByText('Leaf Tab')).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
   });
 
   test('toggles child visibility when expand/collapse button is clicked', () => {
-    render(<TabItem tab={mockTabWithChildren} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTabWithChildren} level={0} />);
     
     const expandButton = screen.getByTestId('expand-collapse-btn-1');
     
@@ -89,7 +89,7 @@ describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
   });
 
   test('expand/collapse button shows correct icon based on state', () => {
-    render(<TabItem tab={mockTabWithChildren} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTabWithChildren} level={0} />);
     
     const expandButton = screen.getByTestId('expand-collapse-btn-1');
     
@@ -110,7 +110,7 @@ describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
   });
 
   test('maintains proper indentation levels for nested tabs', () => {
-    render(<TabItem tab={mockTabWithChildren} level={2} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTabWithChildren} level={2} />);
     
     // Parent should have level 2 indentation
     const parentContent = screen.getByTestId('tab-content-1');
@@ -148,7 +148,7 @@ describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
       ]
     };
 
-    render(<TabItem tab={deeplyNestedTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={deeplyNestedTab} level={0} />);
     
     // All levels should be visible initially
     expect(screen.getByText('Level 1')).toBeInTheDocument();
@@ -187,7 +187,7 @@ describe('Task 3.1: TabItem Collapse/Expand Functionality', () => {
       }
     ];
 
-    render(
+    renderWithDropZoneProvider(
       <div>
         <TabItem tab={siblingTabs[0]} level={0} />
         <TabItem tab={siblingTabs[1]} level={0} />

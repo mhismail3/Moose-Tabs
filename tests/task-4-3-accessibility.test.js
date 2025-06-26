@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, renderWithDropZoneProvider } from './test-utils';
 import App from '../src/App';
 import TabTreeComponent from '../src/components/TabTreeComponent';
 import TabItem from '../src/components/TabItem';
@@ -97,7 +97,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         children: []
       };
 
-      render(<TabItem tab={tab} level={0} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} />);
 
       const treeItem = screen.getByRole('treeitem');
       expect(treeItem).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         children: []
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const treeItem = screen.getByRole('treeitem');
       expect(treeItem).toHaveAttribute('tabIndex', '0');
@@ -137,7 +137,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         ]
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const treeItem = screen.getByTestId('tab-content-1');
       expect(treeItem).toHaveAttribute('aria-expanded', 'true');
@@ -160,7 +160,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         ]
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const expandButton = screen.getByTestId('expand-collapse-btn-1');
       fireEvent.click(expandButton);
@@ -199,7 +199,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         children: []
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const treeItem = screen.getByRole('treeitem');
       treeItem.focus();
@@ -289,7 +289,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         ]
       };
 
-      render(<TabItem tab={tab} level={0} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} />);
 
       // First collapse the item
       const expandButton = screen.getByTestId('expand-collapse-btn-1');
@@ -328,7 +328,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         ]
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const treeItem = screen.getByTestId('tab-content-1');
       treeItem.focus();
@@ -352,7 +352,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         children: []
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const treeItem = screen.getByRole('treeitem');
       treeItem.focus();
@@ -373,7 +373,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         children: []
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const treeItem = screen.getByRole('treeitem');
       treeItem.focus();
@@ -455,7 +455,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         children: []
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const treeItem = screen.getByRole('treeitem');
       const ariaLabel = treeItem.getAttribute('aria-label');
@@ -481,7 +481,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         ]
       };
 
-      render(<TabItem tab={tab} level={0} isFirst={true} />);
+      renderWithDropZoneProvider(<TabItem tab={tab} level={0} isFirst={true} />);
 
       const expandButton = screen.getByTestId('expand-collapse-btn-1');
       expect(expandButton).toHaveAttribute('aria-label', 'Collapse');

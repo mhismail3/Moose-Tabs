@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { screen, renderWithDropZoneProvider } from './test-utils';
 import TabItem from '../src/components/TabItem';
 
 // Mock the react-dnd library
@@ -50,7 +50,7 @@ describe('Drag-and-Drop Index Calculation Fix', () => {
     chrome.runtime.sendMessage.mockResolvedValue({ success: true });
 
     // Create a TabItem component for Tab B
-    render(<TabItem tab={tabB} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={tabB} level={0} />);
 
     // Import the handleTabMove function indirectly by triggering it
     // We'll simulate dragging Tab A (id: 1) to be after Tab B (id: 2)
@@ -96,7 +96,7 @@ describe('Drag-and-Drop Index Calculation Fix', () => {
     chrome.runtime.sendMessage.mockResolvedValue({ success: true });
 
     // Create a TabItem component for Tab A
-    render(<TabItem tab={tabA} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={tabA} level={0} />);
 
     // Simulate dragging Tab B (id: 2) to be after Tab A (id: 1)
     const draggedTabId = 2; // Tab B

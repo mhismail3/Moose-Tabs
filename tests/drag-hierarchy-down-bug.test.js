@@ -5,7 +5,7 @@
  */
 
 import { useDragDrop } from '../src/components/hooks/useDragDrop';
-import { renderHook } from '@testing-library/react';
+import { renderHookWithDropZoneProviderWithDropZoneProvider } from './test-utils';
 
 // Mock Chrome APIs
 global.chrome = {
@@ -65,7 +65,7 @@ describe('Drag Hierarchy Down Bug', () => {
       ]
     });
 
-    const { result } = renderHook(() => useDragDrop(mockTab, false));
+    const { result } = renderHookWithDropZoneProvider(() => useDragDrop(mockTab, false));
     
     // Simulate dragging tab 1 (parent) to after tab 4 (target)
     await result.current.handleTabMove(1, { id: 4, windowId: 1 }, 'after');
@@ -125,7 +125,7 @@ describe('Drag Hierarchy Down Bug', () => {
       ]
     });
 
-    const { result } = renderHook(() => useDragDrop(mockTab, false));
+    const { result } = renderHookWithDropZoneProvider(() => useDragDrop(mockTab, false));
     
     // Simulate dragging tab 1 (parent) to after tab 4 (target)
     await result.current.handleTabMove(1, { id: 4, windowId: 1 }, 'after');

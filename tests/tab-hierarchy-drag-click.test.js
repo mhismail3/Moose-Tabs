@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, renderWithDropZoneProvider } from './test-utils';
 import TabItem from '../src/components/TabItem';
 
 // Mock Chrome APIs
@@ -78,7 +78,7 @@ describe('Tab Hierarchy Drag and Click Functionality', () => {
   });
 
   test('clicking on tab content sends switchToTab message', async () => {
-    render(<TabItem tab={mockSimpleTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockSimpleTab} level={0} />);
     
     const tabContent = screen.getByTestId('tab-content-4');
     
@@ -93,7 +93,7 @@ describe('Tab Hierarchy Drag and Click Functionality', () => {
   });
 
   test('clicking on expand/collapse button does not trigger tab switch', async () => {
-    render(<TabItem tab={mockParentTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockParentTab} level={0} />);
     
     const expandButton = screen.getByTestId('expand-collapse-btn-1');
     
@@ -108,7 +108,7 @@ describe('Tab Hierarchy Drag and Click Functionality', () => {
   });
 
   test('clicking on close button does not trigger tab switch', async () => {
-    render(<TabItem tab={mockSimpleTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockSimpleTab} level={0} />);
     
     const tabContent = screen.getByTestId('tab-content-4');
     
@@ -132,7 +132,7 @@ describe('Tab Hierarchy Drag and Click Functionality', () => {
   });
 
   test('clicking on favicon area triggers tab switch', async () => {
-    render(<TabItem tab={mockSimpleTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockSimpleTab} level={0} />);
     
     const favicon = screen.getByRole('img');
     
@@ -147,7 +147,7 @@ describe('Tab Hierarchy Drag and Click Functionality', () => {
   });
 
   test('clicking on tab title triggers tab switch', async () => {
-    render(<TabItem tab={mockSimpleTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockSimpleTab} level={0} />);
     
     const tabTitle = screen.getByText('Simple Tab');
     
@@ -162,7 +162,7 @@ describe('Tab Hierarchy Drag and Click Functionality', () => {
   });
 
   test('clicking on tab URL triggers tab switch', async () => {
-    render(<TabItem tab={mockSimpleTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockSimpleTab} level={0} />);
     
     const tabUrl = screen.getByText('https://simple.com');
     
@@ -177,7 +177,7 @@ describe('Tab Hierarchy Drag and Click Functionality', () => {
   });
 
   test('tab content has clickable styling', () => {
-    render(<TabItem tab={mockSimpleTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockSimpleTab} level={0} />);
     
     const tabContent = screen.getByTestId('tab-content-4');
     
@@ -188,7 +188,7 @@ describe('Tab Hierarchy Drag and Click Functionality', () => {
   });
 
   test('tab with children shows both expand button and is clickable', async () => {
-    render(<TabItem tab={mockParentTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockParentTab} level={0} />);
     
     // Should have expand button
     const expandButton = screen.getByTestId('expand-collapse-btn-1');

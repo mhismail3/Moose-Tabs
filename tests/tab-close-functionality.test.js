@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, renderWithDropZoneProvider } from './test-utils';
 import TabItem from '../src/components/TabItem';
 
 // Mock Chrome APIs
@@ -34,7 +34,7 @@ describe('Tab Close Functionality', () => {
   });
 
   test('renders tab with favicon', () => {
-    render(<TabItem tab={mockTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTab} level={0} />);
     
     const favicon = screen.getByRole('img');
     expect(favicon).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('Tab Close Functionality', () => {
   });
 
   test('close button appears on hover', async () => {
-    render(<TabItem tab={mockTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTab} level={0} />);
     
     const tabContent = screen.getByTestId('tab-content-1');
     
@@ -62,7 +62,7 @@ describe('Tab Close Functionality', () => {
   });
 
   test('close button disappears when hover ends', async () => {
-    render(<TabItem tab={mockTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTab} level={0} />);
     
     const tabContent = screen.getByTestId('tab-content-1');
     
@@ -84,7 +84,7 @@ describe('Tab Close Functionality', () => {
   });
 
   test('clicking close button sends closeTab message', async () => {
-    render(<TabItem tab={mockTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTab} level={0} />);
     
     const tabContent = screen.getByTestId('tab-content-1');
     
@@ -107,7 +107,7 @@ describe('Tab Close Functionality', () => {
   test('close button click event does not propagate', async () => {
     const mockTabClick = jest.fn();
     
-    render(
+    renderWithDropZoneProvider(
       <div onClick={mockTabClick}>
         <TabItem tab={mockTab} level={0} />
       </div>
@@ -129,7 +129,7 @@ describe('Tab Close Functionality', () => {
   });
 
   test('close button has correct accessibility attributes', async () => {
-    render(<TabItem tab={mockTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTab} level={0} />);
     
     const tabContent = screen.getByTestId('tab-content-1');
     
@@ -145,7 +145,7 @@ describe('Tab Close Functionality', () => {
   });
 
   test('favicon fallback on load error', () => {
-    render(<TabItem tab={mockTab} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={mockTab} level={0} />);
     
     const favicon = screen.getByRole('img');
     
@@ -163,7 +163,7 @@ describe('Tab Close Functionality', () => {
       url: 'not-a-valid-url'
     };
     
-    render(<TabItem tab={tabWithInvalidUrl} level={0} />);
+    renderWithDropZoneProvider(<TabItem tab={tabWithInvalidUrl} level={0} />);
     
     const favicon = screen.getByRole('img');
     expect(favicon).toBeInTheDocument();

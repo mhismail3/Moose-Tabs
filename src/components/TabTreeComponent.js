@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import TabItem from './TabItem';
 import { getMessage } from '../utils/i18n';
+import { DropZoneProvider } from './context/DropZoneContext';
 import './TabTree.css';
 
 function TabTreeComponent({ tabHierarchy = [] }) {
@@ -73,8 +74,8 @@ function TabTreeComponent({ tabHierarchy = [] }) {
     return flat.slice().sort((a, b) => (a.index || 0) - (b.index || 0));
   }, [tabHierarchy]);
 
-  if (!tabHierarchy || tabHierarchy.length === 0) {
-    return (
+  return (
+    <DropZoneProvider>
       <div data-testid="tab-tree-container" className="tab-tree">
         <div className="search-bar-container">
           <div className="search-input-container">
@@ -96,55 +97,34 @@ function TabTreeComponent({ tabHierarchy = [] }) {
             </button>
           </div>
         </div>
-        <div className="empty-state">{getMessage('no_tabs_available', [], 'No tabs available')}</div>
-      </div>
-    );
-  }
-
-  return (
-    <div data-testid="tab-tree-container" className="tab-tree">
-      <div className="search-bar-container">
-        <div className="search-input-container">
-          <input
-            type="text"
-            className="search-bar"
-            placeholder="Search tabs"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            aria-label="Search tabs"
-          />
-          <button
-            className={`search-clear-btn ${searchTerm.trim() ? 'visible' : ''}`}
-            onClick={handleClearSearch}
-            aria-label="Clear search"
-            type="button"
-          >
-            ×
-          </button>
-        </div>
-      </div>
-      <div 
-        className="tab-tree-content"
-        role="tree"
-        aria-label={getMessage('tree_aria_label', [], 'Tab hierarchy tree')}
-      >
-        {filteredHierarchy.length === 0 && searchTerm.trim() ? (
-          <div className="empty-state">No tabs match your search</div>
+        
+        {(!tabHierarchy || tabHierarchy.length === 0) ? (
+          <div className="empty-state">{getMessage('no_tabs_available', [], 'No tabs available')}</div>
         ) : (
-          filteredHierarchy.map((tab, index) => (
-            <TabItem 
-              key={tab.id} 
-              tab={tab} 
-              level={0} 
-              isFirst={index === 0}
-              totalSiblings={filteredHierarchy.length}
-              positionInSet={index + 1}
-              allTabsInWindow={allTabsInWindow}
-            />
-          ))
+          <div 
+            className="tab-tree-content"
+            role="tree"
+            aria-label={getMessage('tree_aria_label', [], 'Tab hierarchy tree')}
+          >
+            {filteredHierarchy.length === 0 && searchTerm.trim() ? (
+              <div className="empty-state">No tabs match your search</div>
+            ) : (
+              filteredHierarchy.map((tab, index) => (
+                <TabItem 
+                  key={tab.id} 
+                  tab={tab} 
+                  level={0} 
+                  isFirst={index === 0}
+                  totalSiblings={filteredHierarchy.length}
+                  positionInSet={index + 1}
+                  allTabsInWindow={allTabsInWindow}
+                />
+              ))
+            )}
+          </div>
         )}
       </div>
-    </div>
+    </DropZoneProvider>
   );
 }
 

@@ -5,7 +5,7 @@
  */
 
 import { useDragDrop } from '../src/components/hooks/useDragDrop';
-import { renderHook } from '@testing-library/react';
+import { renderHookWithDropZoneProviderWithDropZoneProvider } from './test-utils';
 
 // Mock Chrome APIs
 global.chrome = {
@@ -42,7 +42,7 @@ describe('Pinned Tab Drop Restrictions', () => {
       { id: 3, index: 2, windowId: 1, pinned: false }
     ]);
 
-    const { result } = renderHook(() => useDragDrop(mockTab, false));
+    const { result } = renderHookWithDropZoneProvider(() => useDragDrop(mockTab, false));
     
     // Test the internal validation function through user interaction
     // The canDrop should be true for this scenario
@@ -67,7 +67,7 @@ describe('Pinned Tab Drop Restrictions', () => {
       { id: 3, index: 2, windowId: 1, pinned: false }
     ]);
 
-    const { result } = renderHook(() => useDragDrop(mockTab, false));
+    const { result } = renderHookWithDropZoneProvider(() => useDragDrop(mockTab, false));
     
     // Since we can't easily test the async validation in isolation,
     // we'll verify the hook structure is set up correctly
@@ -94,7 +94,7 @@ describe('Pinned Tab Drop Restrictions', () => {
       { id: 4, index: 3, windowId: 1, pinned: false }
     ]);
 
-    const { result } = renderHook(() => useDragDrop(mockTab, false));
+    const { result } = renderHookWithDropZoneProvider(() => useDragDrop(mockTab, false));
     
     // Test hook initialization
     expect(result.current.canDrop).toBe(true);
@@ -119,7 +119,7 @@ describe('Pinned Tab Drop Restrictions', () => {
       { id: 4, index: 3, windowId: 1, pinned: false }
     ]);
 
-    const { result } = renderHook(() => useDragDrop(mockTab, false));
+    const { result } = renderHookWithDropZoneProvider(() => useDragDrop(mockTab, false));
     
     // Test hook structure
     expect(result.current).toHaveProperty('canDrop');
@@ -144,7 +144,7 @@ describe('Pinned Tab Drop Restrictions', () => {
       { id: 4, index: 3, windowId: 1, pinned: false }
     ]);
 
-    const { result } = renderHook(() => useDragDrop(mockTab, false));
+    const { result } = renderHookWithDropZoneProvider(() => useDragDrop(mockTab, false));
     
     // Test hook initialization and structure
     expect(result.current).toHaveProperty('showInvalid');

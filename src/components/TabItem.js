@@ -55,17 +55,17 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
   };
 
   // Extract complex logic into focused hooks
-  const { isDragging, isOver, canDrop, showInvalid, dragDropRef } = useDragDrop(tab, hasChildren, undefined, allTabsInWindow);
+  const { isDragging, isOver, canDrop, showInvalid, dropZoneType, dragDropRef } = useDragDrop(tab, hasChildren, undefined, allTabsInWindow, level);
   const { handleKeyDown } = useKeyboardNavigation(hasChildren, isExpanded, setIsExpanded);
 
   return (
     <div 
-      className={`tab-item ${isOver && canDrop ? 'drop-zone-active' : ''} ${showInvalid ? 'drop-zone-invalid' : ''}`}
+      className={`tab-item ${isOver && canDrop ? 'drop-zone-active' : ''} ${showInvalid ? 'drop-zone-invalid' : ''} ${dropZoneType === 'child' ? `drop-zone-child drop-zone-child-level-${level}` : ''} ${dropZoneType === 'sibling' ? `drop-zone-sibling drop-zone-sibling-level-${level}` : ''}`}
       ref={dragDropRef}
     >
       <div 
         data-testid={`tab-content-${tab.id}`}
-        className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${showInvalid ? 'drop-invalid' : ''} ${isAnimating(tab.id, 'up') ? 'moving-up' : ''} ${isAnimating(tab.id, 'down') ? 'moving-down' : ''} ${isAnimating(tab.id, 'displaced-up') ? 'displaced-up' : ''} ${isAnimating(tab.id, 'displaced-down') ? 'displaced-down' : ''}`}
+        className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${showInvalid ? 'drop-invalid' : ''} ${isAnimating(tab.id, 'up') ? 'moving-up' : ''} ${isAnimating(tab.id, 'down') ? 'moving-down' : ''} ${isAnimating(tab.id, 'displaced-up') ? 'displaced-up' : ''} ${isAnimating(tab.id, 'displaced-down') ? 'displaced-down' : ''} ${dropZoneType === 'child' ? `drop-target-child drop-target-child-level-${level}` : ''} ${dropZoneType === 'sibling' ? 'drop-target-sibling' : ''}`}
         style={{ 
           marginLeft: level === 0 ? 0 : 0,
           opacity: isDragging ? 0.5 : 1

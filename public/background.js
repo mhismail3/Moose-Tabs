@@ -198,35 +198,56 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         });
         break;
       case 'closeTab':
-        console.log('Close tab requested:', request.tabId);
+        console.log('Closing tab:', request.tabId);
         try {
           await chrome.tabs.remove(request.tabId);
           sendResponse({ success: true });
         } catch (error) {
           console.error('Failed to close tab:', error);
-          sendResponse({ 
-            success: false, 
-            error: error.message 
-          });
+          sendResponse({ success: false, error: error.message });
         }
         break;
       case 'switchToTab':
-        console.log('Switch to tab requested:', request.tabId);
+        console.log('Switching to tab:', request.tabId);
         try {
-          // First get the tab to find its window
           const tab = await chrome.tabs.get(request.tabId);
-          
-          // Focus the window and then activate the tab
-          await chrome.windows.update(tab.windowId, { focused: true });
           await chrome.tabs.update(request.tabId, { active: true });
-          
+          await chrome.windows.update(tab.windowId, { focused: true });
           sendResponse({ success: true });
         } catch (error) {
           console.error('Failed to switch to tab:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+        break;
+      case 'updateParentRelationship':
+        console.log('Updating parent relationship:', request.tabId, '->', request.parentId);
+        try {
+          // Use the TabTree's internal method to update parent relationship
+          tabHierarchy._updateParentRelationship(request.tabId, request.parentId);
+          
+          // Notify all sidebars of the hierarchy change
+          await notifyHierarchyChange();
+          
+          sendResponse({ success: true });
+        } catch (error) {
+          console.error('Failed to update parent relationship:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+        break;
+      case 'getTabParent':
+        console.log('Getting parent for tab:', request.tabId);
+        try {
+          const tab = tabHierarchy.getTab(request.tabId);
+          const parentId = tab ? tab.parentId : null;
+          
           sendResponse({ 
-            success: false, 
-            error: error.message 
+            success: true, 
+            parentId: parentId,
+            tabId: request.tabId
           });
+        } catch (error) {
+          console.error('Failed to get tab parent:', error);
+          sendResponse({ success: false, error: error.message });
         }
         break;
       default:
