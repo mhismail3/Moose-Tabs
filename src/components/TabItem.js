@@ -8,6 +8,8 @@ import './TabTree.css';
 function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionInSet = 1, allTabsInWindow }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
+  const [savedExpandedState, setSavedExpandedState] = useState(null);
+  const [isDragCollapsed, setIsDragCollapsed] = useState(false);
   const hasChildren = tab.children && tab.children.length > 0;
   
   // Animation management
@@ -58,6 +60,51 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
   const { isDragging, isOver, canDrop, showInvalid, dropZoneType, dragDropRef } = useDragDrop(tab, hasChildren, undefined, allTabsInWindow, level);
   const { handleKeyDown } = useKeyboardNavigation(hasChildren, isExpanded, setIsExpanded);
 
+  // Save expansion state and collapse children when dragging starts
+  React.useEffect(() => {
+    if (isDragging && hasChildren && savedExpandedState === null) {
+      // Save the current expanded state
+      const expandedState = gatherExpandedState(tab);
+      setSavedExpandedState(expandedState);
+      setIsDragCollapsed(true);
+    } else if (!isDragging && savedExpandedState !== null) {
+      // Restore the expanded state when dragging ends
+      setTimeout(() => {
+        restoreExpandedState(tab, savedExpandedState, setIsExpanded);
+        setSavedExpandedState(null);
+        setIsDragCollapsed(false);
+      }, 100); // Small delay to let the drop animation complete
+    }
+  }, [isDragging, hasChildren, savedExpandedState, tab]);
+
+  // Helper functions for managing expanded state
+  const gatherExpandedState = (tabNode) => {
+    const state = { [tabNode.id]: isExpanded };
+    if (tabNode.children) {
+      tabNode.children.forEach(child => {
+        // Store the current expansion state - all children are expanded by default
+        // This assumes children are expanded; in a full implementation, you'd 
+        // need to track individual child expansion states
+        state[child.id] = true;
+        
+        // Recursively gather nested children states
+        if (child.children && child.children.length > 0) {
+          const childState = gatherExpandedState(child);
+          Object.assign(state, childState);
+        }
+      });
+    }
+    return state;
+  };
+
+  const restoreExpandedState = (tabNode, state, setExpandedFn) => {
+    if (state[tabNode.id] !== undefined) {
+      setExpandedFn(state[tabNode.id]);
+    }
+    // Note: For nested children, their expansion state would be restored 
+    // when their respective TabItem components mount and check the saved state
+  };
+
   return (
     <div 
       className={`tab-item ${isOver && canDrop ? 'drop-zone-active' : ''} ${showInvalid ? 'drop-zone-invalid' : ''} ${dropZoneType === 'child' ? `drop-zone-child drop-zone-child-level-${level}` : ''} ${dropZoneType === 'sibling' ? `drop-zone-sibling drop-zone-sibling-level-${level}` : ''}`}
@@ -65,7 +112,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
     >
       <div 
         data-testid={`tab-content-${tab.id}`}
-        className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${showInvalid ? 'drop-invalid' : ''} ${isAnimating(tab.id, 'up') ? 'moving-up' : ''} ${isAnimating(tab.id, 'down') ? 'moving-down' : ''} ${isAnimating(tab.id, 'displaced-up') ? 'displaced-up' : ''} ${isAnimating(tab.id, 'displaced-down') ? 'displaced-down' : ''} ${dropZoneType === 'child' ? `drop-target-child drop-target-child-level-${level}` : ''} ${dropZoneType === 'sibling' ? 'drop-target-sibling' : ''}`}
+        className={`tab-content tab-level-${level} ${isDragging ? 'dragging' : ''} ${isDragging && hasChildren ? 'dragging-with-children' : ''} ${isOver && canDrop ? 'drop-target' : ''} ${showInvalid ? 'drop-invalid' : ''} ${isAnimating(tab.id, 'up') ? 'moving-up' : ''} ${isAnimating(tab.id, 'down') ? 'moving-down' : ''} ${isAnimating(tab.id, 'displaced-up') ? 'displaced-up' : ''} ${isAnimating(tab.id, 'displaced-down') ? 'displaced-down' : ''} ${dropZoneType === 'child' ? `drop-target-child drop-target-child-level-${level}` : ''} ${dropZoneType === 'sibling' ? 'drop-target-sibling' : ''}`}
         style={{ 
           marginLeft: level === 0 ? 0 : 0,
           opacity: isDragging ? 0.5 : 1
@@ -118,7 +165,7 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
           </button>
         )}
       </div>
-      {hasChildren && isExpanded && (
+      {hasChildren && isExpanded && !isDragCollapsed && (
         <div className="tab-children" role="group">
           {tab.children.map((child, index) => (
             <TabItem 

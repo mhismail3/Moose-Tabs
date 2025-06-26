@@ -585,6 +585,43 @@
   z-index: var(--z-modal);
 }
 
+/* Special styling for parent tabs being dragged with children */
+.tab-content.dragging-with-children {
+  position: relative;
+}
+
+/* Stack indicator - shows a peek of another tab at the bottom */
+.tab-content.dragging-with-children::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 2px;
+  right: 2px;
+  height: 4px;
+  background: var(--color-bg-overlay);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  opacity: 0.8;
+  z-index: -1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Second stack indicator for even more depth */
+.tab-content.dragging-with-children::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 4px;
+  right: 4px;
+  height: 4px;
+  background: var(--color-bg-overlay);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  opacity: 0.6;
+  z-index: -2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .tab-content.drop-target {
   background: rgba(99, 241, 170, 0.2);
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
