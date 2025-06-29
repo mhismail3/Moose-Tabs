@@ -2,17 +2,62 @@ import React, { useState, useMemo, useEffect } from 'react';
 import TabItem from './TabItem';
 import { getMessage } from '../utils/i18n';
 import { DropZoneProvider } from './context/DropZoneContext';
+import { TutorialProvider, useTutorial } from './tutorial/TutorialContext';
+import TutorialOverlay from './tutorial/TutorialOverlay';
 import './TabTree.css';
 
-function TabTreeComponent({ tabHierarchy = [] }) {
+// Inner component that uses tutorial context
+function TabTreeContent({ tabHierarchy = [] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [customWindowNames, setCustomWindowNames] = useState({});
   const [editingWindowId, setEditingWindowId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  
+  // Tutorial context
+  const { 
+    isActive: tutorialActive, 
+    currentStep,
+    nextStep, 
+    previousStep, 
+    skipTutorial 
+  } = useTutorial();
 
   const handleClearSearch = () => {
     setSearchTerm('');
   };
+
+  // Handle tutorial keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only handle tutorial shortcuts when tutorial is active
+      if (!tutorialActive) return;
+      
+      // Don't interfere with input fields
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          skipTutorial();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          nextStep();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (currentStep > 0) {
+            previousStep();
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [tutorialActive, currentStep, nextStep, previousStep, skipTutorial]);
 
   // Load custom window names from Chrome storage on mount
   useEffect(() => {
@@ -267,7 +312,19 @@ function TabTreeComponent({ tabHierarchy = [] }) {
           </div>
         )}
       </div>
+      
+      {/* Tutorial Overlay */}
+      <TutorialOverlay />
     </DropZoneProvider>
+  );
+}
+
+// Main component wrapper with tutorial provider
+function TabTreeComponent({ tabHierarchy = [] }) {
+  return (
+    <TutorialProvider>
+      <TabTreeContent tabHierarchy={tabHierarchy} />
+    </TutorialProvider>
   );
 }
 

@@ -9,7 +9,8 @@
   },
   "permissions": [
     "tabs",
-    "sidePanel"
+    "sidePanel",
+    "storage"
   ],
   "side_panel": {
     "default_path": "index.html"
