@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithProviders } from './test-utils';
 import TabTreeComponent from '../src/components/TabTreeComponent';
 
 // Mock CSS media queries for testing
@@ -51,7 +52,7 @@ describe('Responsive Design for Smaller Widths', () => {
   });
 
   test('renders tabs at normal width', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     expect(screen.getByText('Very Long Tab Title That Should Truncate Properly')).toBeInTheDocument();
     expect(screen.getByText('Nested Tab with Long Title')).toBeInTheDocument();
@@ -59,7 +60,7 @@ describe('Responsive Design for Smaller Widths', () => {
   });
 
   test('search bar renders with proper responsive classes', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     const clearButton = screen.getByLabelText('Clear search');
@@ -69,7 +70,7 @@ describe('Responsive Design for Smaller Widths', () => {
   });
 
   test('tab elements have proper responsive classes', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const tabContent = screen.getByTestId('tab-content-1');
     const expandButton = screen.getByTestId('expand-collapse-btn-1');
@@ -79,7 +80,7 @@ describe('Responsive Design for Smaller Widths', () => {
   });
 
   test('text truncation works with CSS classes', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const tabTitle = screen.getByText('Very Long Tab Title That Should Truncate Properly');
     const tabUrl = screen.getByText('https://www.verylongdomainname.com/very/long/path/that/should/be/truncated');
@@ -94,7 +95,7 @@ describe('Responsive Design for Smaller Widths', () => {
   });
 
   test('nested tabs maintain proper structure at small widths', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const parentTab = screen.getByTestId('tab-content-1');
     const childTab = screen.getByTestId('tab-content-2');
@@ -108,7 +109,7 @@ describe('Responsive Design for Smaller Widths', () => {
   });
 
   test('favicon elements have proper sizing classes', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const favicons = screen.getAllByRole('img');
     
@@ -118,7 +119,7 @@ describe('Responsive Design for Smaller Widths', () => {
   });
 
   test('responsive CSS classes are properly applied', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     // Check that all main elements have the correct classes for responsive behavior
     const tabContents = screen.getAllByRole('treeitem');
@@ -137,7 +138,7 @@ describe('Responsive Design for Smaller Widths', () => {
   });
 
   test('search functionality works at small widths', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchContainer = screen.getByRole('textbox').closest('.search-input-container');
     const searchBarContainer = searchContainer.closest('.search-bar-container');

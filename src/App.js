@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import TabTreeComponent from './components/TabTreeComponent';
-import { initializeTheme } from './utils/themeDetection';
+import { initializeEnhancedTheme } from './utils/enhancedThemeDetection';
 import { getMessage } from './utils/i18n';
+import { SettingsProvider } from './contexts/SettingsContext';
 
 function App() {
   const [tabHierarchy, setTabHierarchy] = useState([]);
@@ -11,14 +12,34 @@ function App() {
   const [error, setError] = useState(null);
   const [currentTheme, setCurrentTheme] = useState('light');
 
-  // Initialize theme detection
+  // Initialize enhanced theme detection with settings support
   useEffect(() => {
-    const cleanupTheme = initializeTheme((theme) => {
-      setCurrentTheme(theme);
-      console.log(`App theme updated to: ${theme}`);
-    });
+    let cleanupTheme;
+    
+    const initTheme = async () => {
+      try {
+        cleanupTheme = await initializeEnhancedTheme((theme) => {
+          setCurrentTheme(theme);
+          console.log(`App theme updated to: ${theme}`);
+        });
+      } catch (error) {
+        console.error('Failed to initialize enhanced theme:', error);
+        // Fallback to basic theme detection
+        const { initializeTheme } = await import('./utils/themeDetection');
+        cleanupTheme = initializeTheme((theme) => {
+          setCurrentTheme(theme);
+          console.log(`App theme updated to: ${theme} (fallback)`);
+        });
+      }
+    };
+    
+    initTheme();
 
-    return cleanupTheme;
+    return () => {
+      if (cleanupTheme) {
+        cleanupTheme();
+      }
+    };
   }, []);
 
   // Tab hierarchy management
@@ -101,43 +122,30 @@ function App() {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div data-testid="sidebar-container" className="sidebar-container">
-        <div className="loading">{getMessage('loading_text', [], 'Loading tab hierarchy...')}</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div data-testid="sidebar-container" className="sidebar-container">
-        <div className="error">Error: {error}</div>
-        <button onClick={() => window.location.reload()}>{getMessage('error_retry_button', [], 'Retry')}</button>
-      </div>
-    );
-  }
-
-  // Show special message if no tabs are available with a refresh option
-  if (!loading && !error && tabHierarchy.length === 0) {
-    return (
-      <div data-testid="sidebar-container" className="sidebar-container">
-        <div className="no-tabs">
-          <p>{getMessage('no_tabs_available', [], 'No tabs available')}</p>
-          <button onClick={() => window.location.reload()}>
-            {getMessage('refresh_button', [], 'Refresh')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div data-testid="sidebar-container" className="sidebar-container">
-      <DndProvider backend={HTML5Backend}>
-        <TabTreeComponent tabHierarchy={tabHierarchy} />
-      </DndProvider>
-    </div>
+    <SettingsProvider>
+      <div data-testid="sidebar-container" className="sidebar-container">
+        {loading ? (
+          <div className="loading">{getMessage('loading_text', [], 'Loading tab hierarchy...')}</div>
+        ) : error ? (
+          <>
+            <div className="error">Error: {error}</div>
+            <button onClick={() => window.location.reload()}>{getMessage('error_retry_button', [], 'Retry')}</button>
+          </>
+        ) : tabHierarchy.length === 0 ? (
+          <div className="no-tabs">
+            <p>{getMessage('no_tabs_available', [], 'No tabs available')}</p>
+            <button onClick={() => window.location.reload()}>
+              {getMessage('refresh_button', [], 'Refresh')}
+            </button>
+          </div>
+        ) : (
+          <DndProvider backend={HTML5Backend}>
+            <TabTreeComponent tabHierarchy={tabHierarchy} />
+          </DndProvider>
+        )}
+      </div>
+    </SettingsProvider>
   );
 }
 

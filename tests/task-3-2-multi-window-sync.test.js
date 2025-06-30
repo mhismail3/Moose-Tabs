@@ -5,7 +5,8 @@
  * tab tree from both windows.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import { renderWithProviders } from './test-utils';
 import App from '../src/App';
 
 // Mock Chrome APIs for testing
@@ -83,7 +84,7 @@ describe('Task 3.2: Multi-Window Sync', () => {
       hierarchy: multiWindowHierarchy
     });
     
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for the component to load and get data
     await waitFor(() => {
@@ -108,42 +109,53 @@ describe('Task 3.2: Multi-Window Sync', () => {
   });
 
   test('sidebar updates when tabs are added to different windows', async () => {
-    // Initial hierarchy with one window
-    const initialHierarchy = [
-      {
-        id: 1,
-        title: 'Window 1 - Tab',
-        url: 'https://example.com',
-        windowId: 1,
-        children: []
+    let callCount = 0;
+    
+    mockSendMessage.mockImplementation((message) => {
+      if (message.action === 'getTabHierarchy') {
+        callCount++;
+        if (callCount === 1) {
+          // First call - initial hierarchy with one window
+          return Promise.resolve({
+            success: true,
+            hierarchy: [
+              {
+                id: 1,
+                title: 'Window 1 - Tab',
+                url: 'https://example.com',
+                windowId: 1,
+                children: []
+              }
+            ]
+          });
+        } else {
+          // Subsequent calls - updated hierarchy with multiple windows
+          return Promise.resolve({
+            success: true,
+            hierarchy: [
+              {
+                id: 1,
+                title: 'Window 1 - Tab',
+                url: 'https://example.com',
+                windowId: 1,
+                children: []
+              },
+              {
+                id: 2,
+                title: 'Window 2 - New Tab',
+                url: 'https://newwindow.com',
+                windowId: 2,
+                children: []
+              }
+            ]
+          });
+        }
       }
-    ];
-
-    // Updated hierarchy with tabs from multiple windows
-    const updatedHierarchy = [
-      {
-        id: 1,
-        title: 'Window 1 - Tab',
-        url: 'https://example.com',
-        windowId: 1,
-        children: []
-      },
-      {
-        id: 2,
-        title: 'Window 2 - New Tab',
-        url: 'https://newwindow.com',
-        windowId: 2,
-        children: []
-      }
-    ];
-
-    // Mock initial response
-    mockSendMessage.mockResolvedValueOnce({
-      success: true,
-      hierarchy: initialHierarchy
+      // For other messages (sidebarActive, sidebarInactive), just return success
+      return Promise.resolve({ success: true });
     });
     
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for initial load
     await waitFor(() => {
@@ -153,14 +165,9 @@ describe('Task 3.2: Multi-Window Sync', () => {
     // Verify only window 1 tab is shown initially
     expect(screen.queryByText('Window 2 - New Tab')).not.toBeInTheDocument();
     
-    // Simulate real-time update with new window tab
-    const mockOnMessage = global.chrome.runtime.onMessage.addListener;
-    const messageHandler = mockOnMessage.mock.calls[0][0];
-    
-    // Trigger hierarchy update message
-    messageHandler({
-      action: 'hierarchyUpdated',
-      hierarchy: updatedHierarchy
+    // Trigger polling update by advancing time
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
     });
     
     // Verify both windows' tabs are now shown
@@ -212,7 +219,7 @@ describe('Task 3.2: Multi-Window Sync', () => {
       hierarchy: initialHierarchy
     });
     
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for initial load
     await waitFor(() => {
@@ -243,7 +250,7 @@ describe('Task 3.2: Multi-Window Sync', () => {
       hierarchy: []
     });
     
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for loading to complete and empty state to show
     await waitFor(() => {
@@ -252,41 +259,53 @@ describe('Task 3.2: Multi-Window Sync', () => {
   });
 
   test('sidebar handles window closing gracefully', async () => {
-    // Initial hierarchy with tabs from two windows
-    const initialHierarchy = [
-      {
-        id: 1,
-        title: 'Window 1 Tab',
-        url: 'https://window1.com',
-        windowId: 1,
-        children: []
-      },
-      {
-        id: 2,
-        title: 'Window 2 Tab',
-        url: 'https://window2.com',
-        windowId: 2,
-        children: []
+    let callCount = 0;
+    
+    mockSendMessage.mockImplementation((message) => {
+      if (message.action === 'getTabHierarchy') {
+        callCount++;
+        if (callCount === 1) {
+          // First call - initial hierarchy with tabs from two windows
+          return Promise.resolve({
+            success: true,
+            hierarchy: [
+              {
+                id: 1,
+                title: 'Window 1 Tab',
+                url: 'https://window1.com',
+                windowId: 1,
+                children: []
+              },
+              {
+                id: 2,
+                title: 'Window 2 Tab',
+                url: 'https://window2.com',
+                windowId: 2,
+                children: []
+              }
+            ]
+          });
+        } else {
+          // Subsequent calls - updated hierarchy after window 1 is closed
+          return Promise.resolve({
+            success: true,
+            hierarchy: [
+              {
+                id: 2,
+                title: 'Window 2 Tab',
+                url: 'https://window2.com',
+                windowId: 2,
+                children: []
+              }
+            ]
+          });
+        }
       }
-    ];
-
-    // Updated hierarchy after window 1 is closed
-    const updatedHierarchy = [
-      {
-        id: 2,
-        title: 'Window 2 Tab',
-        url: 'https://window2.com',
-        windowId: 2,
-        children: []
-      }
-    ];
-
-    mockSendMessage.mockResolvedValueOnce({
-      success: true,
-      hierarchy: initialHierarchy
+      // For other messages (sidebarActive, sidebarInactive), just return success
+      return Promise.resolve({ success: true });
     });
     
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for initial load
     await waitFor(() => {
@@ -294,13 +313,9 @@ describe('Task 3.2: Multi-Window Sync', () => {
       expect(screen.getByText('Window 2 Tab')).toBeInTheDocument();
     });
     
-    // Simulate window 1 closing (its tabs are removed)
-    const mockOnMessage = global.chrome.runtime.onMessage.addListener;
-    const messageHandler = mockOnMessage.mock.calls[0][0];
-    
-    messageHandler({
-      action: 'hierarchyUpdated',
-      hierarchy: updatedHierarchy
+    // Trigger polling update by advancing time to simulate window closing
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
     });
     
     // Verify only window 2 tab remains
@@ -316,7 +331,7 @@ describe('Task 3.2: Multi-Window Sync', () => {
       hierarchy: []
     });
     
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for component to make initial request
     await waitFor(() => {

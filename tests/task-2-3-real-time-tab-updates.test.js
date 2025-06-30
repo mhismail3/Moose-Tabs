@@ -4,7 +4,9 @@
  */
 
 import { render, screen, act } from '@testing-library/react';
+import React from 'react';
 import TabTreeComponent from '../src/components/TabTreeComponent';
+import { SettingsProvider } from '../src/contexts/SettingsContext';
 
 // Mock Chrome APIs for testing
 global.chrome = {
@@ -14,7 +16,52 @@ global.chrome = {
       addListener: jest.fn(),
       removeListener: jest.fn()
     }
+  },
+  storage: {
+    local: {
+      get: jest.fn(() => Promise.resolve({})),
+      set: jest.fn(() => Promise.resolve())
+    }
   }
+};
+
+// Mock hooks that components depend on
+jest.mock('../src/components/hooks/useDragDrop', () => ({
+  useDragDrop: () => ({
+    isDragging: false,
+    isOver: false,
+    canDrop: false,
+    showInvalid: false,
+    dropZoneType: null,
+    dragDropRef: { current: null }
+  })
+}));
+
+jest.mock('../src/components/hooks/useKeyboardNavigation', () => ({
+  useKeyboardNavigation: () => ({
+    handleKeyDown: jest.fn()
+  })
+}));
+
+jest.mock('../src/components/hooks/useTabAnimations', () => ({
+  useTabAnimations: () => ({
+    subscribe: jest.fn(() => () => {}),
+    isAnimating: jest.fn(() => false)
+  })
+}));
+
+jest.mock('../src/utils/i18n', () => ({
+  getMessage: jest.fn((key, params, fallback) => fallback || key),
+  getTabItemAriaLabel: jest.fn((title) => `Tab: ${title}`)
+}));
+
+// Helper to render with providers
+const renderWithProviders = (component) => {
+  return render(
+    <SettingsProvider>
+      {component}
+    </SettingsProvider>
+  );
 };
 
 describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
@@ -35,7 +82,7 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     ];
     
     // Render component with initial data
-    const { rerender } = render(<TabTreeComponent tabHierarchy={initialHierarchy} />);
+    const { rerender } = renderWithProviders(<TabTreeComponent tabHierarchy={initialHierarchy} />);
     
     // Verify initial tab is displayed
     expect(screen.getByText('Initial Tab')).toBeInTheDocument();
@@ -49,7 +96,11 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     ];
     
     // Re-render with updated hierarchy (simulating real-time update)
-    rerender(<TabTreeComponent tabHierarchy={updatedHierarchy} />);
+    rerender(
+      <SettingsProvider>
+        <TabTreeComponent tabHierarchy={updatedHierarchy} />
+      </SettingsProvider>
+    );
     
     // Verify new tab appears in the UI
     expect(screen.getByText('Initial Tab')).toBeInTheDocument();
@@ -65,7 +116,7 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     ];
     
     // Render component with initial data
-    const { rerender } = render(<TabTreeComponent tabHierarchy={initialHierarchy} />);
+    const { rerender } = renderWithProviders(<TabTreeComponent tabHierarchy={initialHierarchy} />);
     
     // Verify both tabs are displayed
     expect(screen.getByText('Tab One')).toBeInTheDocument();
@@ -77,7 +128,11 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     ];
     
     // Re-render with updated hierarchy (simulating real-time update)
-    rerender(<TabTreeComponent tabHierarchy={updatedHierarchy} />);
+    rerender(
+      <SettingsProvider>
+        <TabTreeComponent tabHierarchy={updatedHierarchy} />
+      </SettingsProvider>
+    );
     
     // Verify removed tab is no longer displayed
     expect(screen.getByText('Tab One')).toBeInTheDocument();
@@ -92,7 +147,7 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     ];
     
     // Render component with initial data
-    const { rerender } = render(<TabTreeComponent tabHierarchy={initialHierarchy} />);
+    const { rerender } = renderWithProviders(<TabTreeComponent tabHierarchy={initialHierarchy} />);
     
     // Verify initial flat structure
     expect(screen.getByText('Parent Tab')).toBeInTheDocument();
@@ -115,7 +170,11 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     ];
     
     // Re-render with updated hierarchy (simulating real-time update)
-    rerender(<TabTreeComponent tabHierarchy={updatedHierarchy} />);
+    rerender(
+      <SettingsProvider>
+        <TabTreeComponent tabHierarchy={updatedHierarchy} />
+      </SettingsProvider>
+    );
     
     // Verify hierarchical structure is now displayed
     expect(screen.getByText('Parent Tab')).toBeInTheDocument();
@@ -131,7 +190,7 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     const emptyHierarchy = [];
     
     // Render component with empty data
-    const { rerender } = render(<TabTreeComponent tabHierarchy={emptyHierarchy} />);
+    const { rerender } = renderWithProviders(<TabTreeComponent tabHierarchy={emptyHierarchy} />);
     
     // Verify empty state
     expect(screen.getByText('No tabs available')).toBeInTheDocument();
@@ -158,7 +217,11 @@ describe('Task 2.3: Real-time Tab Updates in TabTreeComponent', () => {
     
     // Apply changes rapidly
     for (const hierarchy of changes) {
-      rerender(<TabTreeComponent tabHierarchy={hierarchy} />);
+      rerender(
+        <SettingsProvider>
+          <TabTreeComponent tabHierarchy={hierarchy} />
+        </SettingsProvider>
+      );
     }
     
     // Verify final state is correct

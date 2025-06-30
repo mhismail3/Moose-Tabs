@@ -8,6 +8,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import TabTreeComponent from '../src/components/TabTreeComponent';
 import { TUTORIAL_STEPS } from '../src/components/tutorial/TutorialContext';
+import { SettingsProvider } from '../src/contexts/SettingsContext';
 import '@testing-library/jest-dom';
 
 // Mock chrome APIs
@@ -24,10 +25,42 @@ global.chrome = {
   }
 };
 
+// Mock hooks
+jest.mock('../src/components/hooks/useDragDrop', () => ({
+  useDragDrop: () => ({
+    isDragging: false,
+    isOver: false,
+    canDrop: false,
+    showInvalid: false,
+    dropZoneType: null,
+    dragDropRef: { current: null }
+  })
+}));
+
+jest.mock('../src/components/hooks/useKeyboardNavigation', () => ({
+  useKeyboardNavigation: () => ({
+    handleKeyDown: jest.fn()
+  })
+}));
+
+jest.mock('../src/components/hooks/useTabAnimations', () => ({
+  useTabAnimations: () => ({
+    subscribe: jest.fn(() => () => {}),
+    isAnimating: jest.fn(() => false)
+  })
+}));
+
+jest.mock('../src/utils/i18n', () => ({
+  getMessage: jest.fn((key, params, fallback) => fallback || key),
+  getTabItemAriaLabel: jest.fn((title) => `Tab: ${title}`)
+}));
+
 // Wrapper component for testing
 const TestWrapper = ({ children }) => (
   <DndProvider backend={HTML5Backend}>
-    {children}
+    <SettingsProvider>
+      {children}
+    </SettingsProvider>
   </DndProvider>
 );
 

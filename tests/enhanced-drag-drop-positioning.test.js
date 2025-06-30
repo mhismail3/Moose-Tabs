@@ -10,6 +10,9 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { useDragDrop } from '../src/components/hooks/useDragDrop';
 import { renderHookWithDropZoneProvider } from './test-utils';
 
+// Unmock the useDragDrop hook for this test since we want to test the real implementation
+jest.unmock('../src/components/hooks/useDragDrop');
+
 // Mock Chrome APIs
 global.chrome = {
   runtime: {

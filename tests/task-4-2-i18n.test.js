@@ -7,6 +7,9 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import App from '../src/App';
 
+// Unmock i18n utilities to test real i18n functionality
+jest.unmock('../src/utils/i18n');
+
 // Mock the react-dnd library
 jest.mock('react-dnd', () => ({
   useDrag: () => [{ isDragging: false }, jest.fn()],

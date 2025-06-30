@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, renderWithProviders } from './test-utils';
 import TabTreeComponent from '../src/components/TabTreeComponent';
 
 describe('Search Functionality', () => {
@@ -37,7 +37,7 @@ describe('Search Functionality', () => {
   ];
 
   test('renders search bar', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     expect(searchBar).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('Search Functionality', () => {
   });
 
   test('renders search bar even when no tabs available', () => {
-    render(<TabTreeComponent tabHierarchy={[]} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={[]} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     expect(searchBar).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe('Search Functionality', () => {
   });
 
   test('filters tabs by title using fuzzy matching', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     // Initially all tabs should be visible
     expect(screen.getByText('Google Search')).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe('Search Functionality', () => {
   });
 
   test('filters tabs by URL using fuzzy matching', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     
@@ -86,7 +86,7 @@ describe('Search Functionality', () => {
   });
 
   test('fuzzy matching works with partial characters', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     
@@ -99,7 +99,7 @@ describe('Search Functionality', () => {
   });
 
   test('includes parent when child matches search', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     
@@ -113,7 +113,7 @@ describe('Search Functionality', () => {
   });
 
   test('shows "no matches" message when search has no results', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     
@@ -127,7 +127,7 @@ describe('Search Functionality', () => {
   });
 
   test('clearing search shows all tabs again', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     
@@ -145,7 +145,7 @@ describe('Search Functionality', () => {
   });
 
   test('search is case insensitive', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     
@@ -158,7 +158,7 @@ describe('Search Functionality', () => {
   });
 
   test('clear button appears when search has text', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     const clearButton = screen.getByLabelText('Clear search');
@@ -174,7 +174,7 @@ describe('Search Functionality', () => {
   });
 
   test('clear button clears search when clicked', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const searchBar = screen.getByPlaceholderText('Search tabs');
     const clearButton = screen.getByLabelText('Clear search');
@@ -196,7 +196,7 @@ describe('Search Functionality', () => {
   });
 
   test('clear button has correct accessibility attributes', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const clearButton = screen.getByLabelText('Clear search');
     

@@ -3,7 +3,8 @@
  * TDD Test: Check if TabTreeComponent renders tab hierarchy with correct indentation
  */
 
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import { renderWithProviders } from './test-utils';
 import TabTreeComponent from '../src/components/TabTreeComponent';
 
 // Mock Chrome APIs for testing
@@ -11,7 +12,14 @@ global.chrome = {
   runtime: {
     sendMessage: jest.fn(),
     onMessage: {
-      addListener: jest.fn()
+      addListener: jest.fn(),
+      removeListener: jest.fn()
+    }
+  },
+  storage: {
+    local: {
+      get: jest.fn(() => Promise.resolve({})),
+      set: jest.fn(() => Promise.resolve())
     }
   }
 };
@@ -62,7 +70,7 @@ const mockTabHierarchy = [
 
 describe('TabTreeComponent', () => {
   test('renders tab hierarchy with correct structure', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     // Check that root tabs are rendered
     expect(screen.getByText('Google')).toBeInTheDocument();
@@ -75,7 +83,7 @@ describe('TabTreeComponent', () => {
   });
 
   test('renders tabs with proper indentation levels', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     // Get tab elements and check their indentation classes
     const googleTab = screen.getByTestId('tab-content-1');
@@ -97,14 +105,14 @@ describe('TabTreeComponent', () => {
   });
 
   test('renders empty state when no tabs provided', () => {
-    render(<TabTreeComponent tabHierarchy={[]} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={[]} />);
     
     const emptyMessage = screen.getByText(/no tabs/i);
     expect(emptyMessage).toBeInTheDocument();
   });
 
   test('displays tab titles and URLs correctly', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     // Check that titles are displayed
     expect(screen.getByText('Google')).toBeInTheDocument();
@@ -116,7 +124,7 @@ describe('TabTreeComponent', () => {
   });
 
   test('renders component with proper tree structure classes', () => {
-    render(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
+    renderWithProviders(<TabTreeComponent tabHierarchy={mockTabHierarchy} />);
     
     const treeContainer = screen.getByTestId('tab-tree-container');
     expect(treeContainer).toBeInTheDocument();

@@ -14,16 +14,22 @@ global.chrome = {
   },
 };
 
-// Mock react-dnd with more detailed drag simulation
-jest.mock('react-dnd', () => ({
-  useDrag: jest.fn(() => [{ isDragging: false }, jest.fn()]),
-  useDrop: jest.fn(() => [{ isOver: false, canDrop: true }, jest.fn()]),
-}));
-
-// Import the actual useDrag hook to control its behavior
-const { useDrag } = require('react-dnd');
+// React DND is already mocked in test setup
 
 describe('Drag Collapse Animation', () => {
+  beforeEach(() => {
+    // Reset the useDragDrop mock to default state for each test
+    global.mockUseDragDrop.mockReturnValue({
+      isDragging: false,
+      isOver: false,
+      canDrop: false,
+      showInvalid: false,
+      dropZoneType: null,
+      dragDropRef: { current: null },
+      handleTabMove: jest.fn()
+    });
+  });
+
   const mockParentTab = {
     id: 1,
     title: 'Parent Tab',
@@ -51,13 +57,6 @@ describe('Drag Collapse Animation', () => {
     children: []
   };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    chrome.runtime.sendMessage.mockResolvedValue({ success: true });
-    
-    // Reset useDrag mock to default state
-    useDrag.mockReturnValue([{ isDragging: false }, jest.fn()]);
-  });
 
   test('parent tab shows children when not dragging', () => {
     renderWithDropZoneProvider(<TabItem tab={mockParentTab} level={0} />);
@@ -78,8 +77,16 @@ describe('Drag Collapse Animation', () => {
     expect(screen.getByTestId('tab-content-2')).toBeInTheDocument();
     expect(screen.getByTestId('tab-content-3')).toBeInTheDocument();
     
-    // Simulate dragging state
-    useDrag.mockReturnValue([{ isDragging: true }, jest.fn()]);
+    // Override the useDragDrop mock to return isDragging: true
+    global.mockUseDragDrop.mockReturnValue({
+      isDragging: true,
+      isOver: false,
+      canDrop: false,
+      showInvalid: false,
+      dropZoneType: null,
+      dragDropRef: { current: null },
+      handleTabMove: jest.fn()
+    });
     
     // Re-render with dragging state
     rerender(<TabItem tab={mockParentTab} level={0} />);
@@ -95,8 +102,16 @@ describe('Drag Collapse Animation', () => {
   });
 
   test('parent tab shows stack indicator when dragging with children', () => {
-    // Simulate dragging state
-    useDrag.mockReturnValue([{ isDragging: true }, jest.fn()]);
+    // Override the useDragDrop mock to return isDragging: true
+    global.mockUseDragDrop.mockReturnValue({
+      isDragging: true,
+      isOver: false,
+      canDrop: false,
+      showInvalid: false,
+      dropZoneType: null,
+      dragDropRef: { current: null },
+      handleTabMove: jest.fn()
+    });
     
     renderWithDropZoneProvider(<TabItem tab={mockParentTab} level={0} />);
     
@@ -107,8 +122,16 @@ describe('Drag Collapse Animation', () => {
   });
 
   test('tab without children does not show stack indicator when dragging', () => {
-    // Simulate dragging state
-    useDrag.mockReturnValue([{ isDragging: true }, jest.fn()]);
+    // Override the useDragDrop mock to return isDragging: true
+    global.mockUseDragDrop.mockReturnValue({
+      isDragging: true,
+      isOver: false,
+      canDrop: false,
+      showInvalid: false,
+      dropZoneType: null,
+      dragDropRef: { current: null },
+      handleTabMove: jest.fn()
+    });
     
     renderWithDropZoneProvider(<TabItem tab={mockChildOnlyTab} level={0} />);
     
@@ -121,7 +144,15 @@ describe('Drag Collapse Animation', () => {
 
   test('children reappear when dragging ends', async () => {
     // Start with dragging state
-    useDrag.mockReturnValue([{ isDragging: true }, jest.fn()]);
+    global.mockUseDragDrop.mockReturnValue({
+      isDragging: true,
+      isOver: false,
+      canDrop: false,
+      showInvalid: false,
+      dropZoneType: null,
+      dragDropRef: { current: null },
+      handleTabMove: jest.fn()
+    });
     
     const { rerender } = renderWithDropZoneProvider(<TabItem tab={mockParentTab} level={0} />);
     
@@ -130,7 +161,15 @@ describe('Drag Collapse Animation', () => {
     expect(screen.queryByTestId('tab-content-3')).not.toBeInTheDocument();
     
     // End dragging
-    useDrag.mockReturnValue([{ isDragging: false }, jest.fn()]);
+    global.mockUseDragDrop.mockReturnValue({
+      isDragging: false,
+      isOver: false,
+      canDrop: false,
+      showInvalid: false,
+      dropZoneType: null,
+      dragDropRef: { current: null },
+      handleTabMove: jest.fn()
+    });
     
     // Re-render without dragging state
     rerender(<TabItem tab={mockParentTab} level={0} />);

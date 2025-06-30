@@ -4,10 +4,13 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, renderWithDropZoneProvider } from './test-utils';
+import { render, screen, fireEvent, waitFor, renderWithDropZoneProvider, renderWithProviders } from './test-utils';
 import App from '../src/App';
 import TabTreeComponent from '../src/components/TabTreeComponent';
 import TabItem from '../src/components/TabItem';
+
+// Unmock keyboard navigation for these tests since we're testing keyboard functionality
+jest.unmock('../src/components/hooks/useKeyboardNavigation');
 
 // Mock the react-dnd library
 jest.mock('react-dnd', () => ({
@@ -81,7 +84,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         }
       ];
 
-      render(<TabTreeComponent tabHierarchy={hierarchy} />);
+      renderWithProviders(<TabTreeComponent tabHierarchy={hierarchy} />);
 
       const treeElement = screen.getByRole('tree');
       expect(treeElement).toBeInTheDocument();
@@ -182,7 +185,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         }
       ];
 
-      render(<TabTreeComponent tabHierarchy={hierarchy} />);
+      renderWithProviders(<TabTreeComponent tabHierarchy={hierarchy} />);
 
       const tree = screen.getByRole('tree');
       expect(tree).toHaveAttribute('aria-label');
@@ -224,7 +227,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         }
       ];
 
-      render(<TabTreeComponent tabHierarchy={hierarchy} />);
+      renderWithProviders(<TabTreeComponent tabHierarchy={hierarchy} />);
 
       const firstItem = screen.getByTestId('tab-content-1');
       const secondItem = screen.getByTestId('tab-content-2');
@@ -257,7 +260,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         }
       ];
 
-      render(<TabTreeComponent tabHierarchy={hierarchy} />);
+      renderWithProviders(<TabTreeComponent tabHierarchy={hierarchy} />);
 
       const firstItem = screen.getByTestId('tab-content-1');
       const secondItem = screen.getByTestId('tab-content-2');
@@ -404,7 +407,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         }
       ];
 
-      render(<TabTreeComponent tabHierarchy={hierarchy} />);
+      renderWithProviders(<TabTreeComponent tabHierarchy={hierarchy} />);
 
       const firstItem = screen.getByTestId('tab-content-1');
       const secondItem = screen.getByTestId('tab-content-2');
@@ -424,7 +427,7 @@ describe('Task 4.3: Accessibility (ARIA roles & Keyboard Navigation)', () => {
         }
       ];
 
-      render(<TabTreeComponent tabHierarchy={hierarchy} />);
+      renderWithProviders(<TabTreeComponent tabHierarchy={hierarchy} />);
 
       const firstItem = screen.getByTestId('tab-content-1');
       firstItem.focus();

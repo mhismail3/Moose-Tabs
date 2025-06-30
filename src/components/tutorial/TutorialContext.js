@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getSetting } from '../../utils/settings';
 
 const TutorialContext = createContext();
 
@@ -112,6 +113,16 @@ export const TutorialProvider = ({ children }) => {
       console.log('🎯 Tutorial: Checking tutorial status...');
       
       try {
+        // Check if auto-start is enabled in settings
+        const autoStart = await getSetting('tutorial.autoStart');
+        console.log('🎯 Tutorial: Auto-start setting:', autoStart);
+        
+        if (autoStart === false) {
+          console.log('🎯 Tutorial: Auto-start disabled in settings');
+          setIsLoading(false);
+          return;
+        }
+        
         if (typeof chrome !== 'undefined' && chrome.storage) {
           const result = await chrome.storage.local.get(['tutorialCompleted', 'tutorialSeen', 'lastTutorialCheck']);
           const completed = result.tutorialCompleted || false;

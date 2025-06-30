@@ -3,14 +3,26 @@ import { getTabItemAriaLabel, getMessage } from '../utils/i18n';
 import { useDragDrop } from './hooks/useDragDrop';
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 import { useTabAnimations } from './hooks/useTabAnimations';
+import { useSettings } from '../contexts/SettingsContext';
 import './TabTree.css';
 
 function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionInSet = 1, allTabsInWindow }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const { settings } = useSettings();
+  
+  // Get tab management settings with fallback defaults
+  const defaultExpandState = settings?.tabManagement?.defaultExpandState ?? 'expanded';
+  const confirmTabClose = settings?.tabManagement?.confirmTabClose ?? false;
+  const initialExpandState = defaultExpandState === 'expanded';
+  
+  const [isExpanded, setIsExpanded] = useState(initialExpandState);
   const [isHovered, setIsHovered] = useState(false);
   const [savedExpandedState, setSavedExpandedState] = useState(null);
   const [isDragCollapsed, setIsDragCollapsed] = useState(false);
   const hasChildren = tab.children && tab.children.length > 0;
+  
+  // Get appearance settings with fallback defaults
+  const showTabUrls = settings?.appearance?.showTabUrls ?? true;
+  const showFavicons = settings?.appearance?.showFavicons ?? true;
   
   // Animation management
   const { subscribe, isAnimating } = useTabAnimations();
@@ -26,6 +38,15 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
 
   const handleCloseTab = (e) => {
     e.stopPropagation();
+    
+    // Show confirmation dialog if enabled
+    if (confirmTabClose) {
+      const confirmed = window.confirm(`Close tab "${tab.title}"?`);
+      if (!confirmed) {
+        return;
+      }
+    }
+    
     // Send message to background script to close the tab
     chrome.runtime.sendMessage({
       action: 'closeTab',
@@ -262,19 +283,21 @@ function TabItem({ tab, level = 0, isFirst = false, totalSiblings = 1, positionI
             {isExpanded ? '▼' : '►'}
           </button>
         )}
-        <img 
-          src={getFaviconUrl(tab.url)} 
-          alt=""
-          className="tab-favicon"
-          onError={(e) => {
-            // Replace with fallback favicon instead of hiding
-            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMTZBOCA4IDAgMSExIDggMEE4IDggMCAwIDEgOCAxNloiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjIiIGZpbGw9IiM2Mzc0ODEiLz4KPC9zdmc+';
-            e.target.onError = null; // Prevent infinite error loop
-          }}
-        />
+        {showFavicons && (
+          <img 
+            src={getFaviconUrl(tab.url)} 
+            alt=""
+            className="tab-favicon"
+            onError={(e) => {
+              // Replace with fallback favicon instead of hiding
+              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMTZBOCA4IDAgMSExIDggMEE4IDggMCAwIDEgOCAxNloiIGZpbGw9IiNGM0Y0RjYiLz4KPGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjIiIGZpbGw9IiM2Mzc0ODEiLz4KPC9zdmc+';
+              e.target.onError = null; // Prevent infinite error loop
+            }}
+          />
+        )}
         <div className="tab-info">
           <div className="tab-title">{tab.title}</div>
-          <div className="tab-url">{tab.url}</div>
+          {showTabUrls && <div className="tab-url">{tab.url}</div>}
         </div>
         {isHovered && (
           <button

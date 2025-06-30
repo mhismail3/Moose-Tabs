@@ -1,10 +1,15 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/index.js',
+  entry: {
+    main: './src/index.js',
+    settings: './src/settings/index.js'
+  },
   output: {
     path: path.resolve(__dirname, 'public'),
-    filename: 'bundle.js',
+    filename: (pathData) => {
+      return pathData.chunk.name === 'main' ? 'bundle.js' : 'settings-bundle.js';
+    },
   },
   module: {
     rules: [

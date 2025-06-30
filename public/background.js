@@ -22,6 +22,13 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     // Initialize with existing tabs
     await initializeExistingTabs();
   }
+  
+  // Create context menu for settings
+  chrome.contextMenus.create({
+    id: 'moose-tabs-settings',
+    title: 'Settings',
+    contexts: ['action']
+  });
 });
 
 // Keep service worker alive and handle various startup scenarios
@@ -129,6 +136,20 @@ chrome.action.onClicked.addListener(async (tab) => {
     await chrome.sidePanel.open({ windowId: tab.windowId });
   } catch (error) {
     console.error('Failed to open side panel:', error);
+  }
+});
+
+// Context menu click handler
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId === 'moose-tabs-settings') {
+    console.log('Opening settings from context menu');
+    
+    try {
+      const settingsUrl = chrome.runtime.getURL('settings.html');
+      await chrome.tabs.create({ url: settingsUrl });
+    } catch (error) {
+      console.error('Failed to open settings page:', error);
+    }
   }
 });
 

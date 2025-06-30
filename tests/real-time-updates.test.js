@@ -2,7 +2,8 @@
  * Test for real-time updates between background script and UI
  */
 
-import { render, screen, act } from '@testing-library/react';
+import { screen, act, waitFor } from '@testing-library/react';
+import { renderWithProviders } from './test-utils';
 import App from '../src/App';
 
 // Mock Chrome APIs for testing
@@ -30,7 +31,7 @@ describe('Real-time Updates', () => {
   test('sidebar registers as active with background script', async () => {
     global.chrome.runtime.sendMessage.mockResolvedValue({ success: true, hierarchy: [] });
     
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for initial fetch
     await act(async () => {
@@ -45,41 +46,50 @@ describe('Real-time Updates', () => {
   });
 
   test('sidebar receives real-time hierarchy updates', async () => {
-    let messageHandler;
-    global.chrome.runtime.onMessage.addListener.mockImplementation((handler) => {
-      messageHandler = handler;
+    let callCount = 0;
+    global.chrome.runtime.sendMessage.mockImplementation((message) => {
+      if (message.action === 'getTabHierarchy') {
+        callCount++;
+        if (callCount === 1) {
+          // First call - initial hierarchy
+          return Promise.resolve({
+            success: true,
+            hierarchy: [
+              { id: 1, title: 'Initial Tab', url: 'https://example.com', windowId: 1, children: [] }
+            ]
+          });
+        } else {
+          // Subsequent calls - updated hierarchy
+          return Promise.resolve({
+            success: true,
+            hierarchy: [
+              { id: 1, title: 'Initial Tab', url: 'https://example.com', windowId: 1, children: [] },
+              { id: 2, title: 'New Tab', url: 'https://newsite.com', windowId: 1, children: [] }
+            ]
+          });
+        }
+      }
+      // For other messages (sidebarActive, sidebarInactive), just return success
+      return Promise.resolve({ success: true });
     });
     
-    global.chrome.runtime.sendMessage.mockResolvedValue({ 
-      success: true, 
-      hierarchy: [
-        { id: 1, title: 'Initial Tab', url: 'https://example.com', children: [] }
-      ]
-    });
-    
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for initial load
+    await waitFor(() => {
+      expect(screen.getByText('Initial Tab')).toBeInTheDocument();
+    });
+    
+    // Trigger polling update by advancing time
     await act(async () => {
-      jest.runOnlyPendingTimers();
+      jest.advanceTimersByTime(1000);
     });
     
-    // Simulate background script sending hierarchy update
-    const updatedHierarchy = [
-      { id: 1, title: 'Initial Tab', url: 'https://example.com', children: [] },
-      { id: 2, title: 'New Tab', url: 'https://newsite.com', children: [] }
-    ];
-    
-    act(() => {
-      messageHandler({
-        action: 'hierarchyUpdated',
-        hierarchy: updatedHierarchy
-      });
+    // Check that new tab appears in UI via polling
+    await waitFor(() => {
+      expect(screen.getByText('New Tab')).toBeInTheDocument();
+      expect(screen.getByText('https://newsite.com')).toBeInTheDocument();
     });
-    
-    // Check that new tab appears in UI
-    expect(screen.getByText('New Tab')).toBeInTheDocument();
-    expect(screen.getByText('https://newsite.com')).toBeInTheDocument();
   });
 
   test('polling mechanism provides fallback updates', async () => {
@@ -90,7 +100,7 @@ describe('Real-time Updates', () => {
         return Promise.resolve({ 
           success: true, 
           hierarchy: [
-            { id: hierarchyCallCount, title: `Tab ${hierarchyCallCount}`, url: `https://example${hierarchyCallCount}.com`, children: [] }
+            { id: hierarchyCallCount, title: `Tab ${hierarchyCallCount}`, url: `https://example${hierarchyCallCount}.com`, windowId: 1, children: [] }
           ]
         });
       }
@@ -98,7 +108,7 @@ describe('Real-time Updates', () => {
       return Promise.resolve({ success: true });
     });
     
-    render(<App />);
+    renderWithProviders(<App />);
     
     // Wait for initial load to complete (App makes immediate call on mount)
     await act(async () => {

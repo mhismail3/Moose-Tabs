@@ -4,14 +4,27 @@ import { getMessage } from '../utils/i18n';
 import { DropZoneProvider } from './context/DropZoneContext';
 import { TutorialProvider, useTutorial } from './tutorial/TutorialContext';
 import TutorialOverlay from './tutorial/TutorialOverlay';
+import { useSettings } from '../contexts/SettingsContext';
 import './TabTree.css';
 
 // Inner component that uses tutorial context
 function TabTreeContent({ tabHierarchy = [] }) {
+  const { settings } = useSettings();
   const [searchTerm, setSearchTerm] = useState('');
   const [customWindowNames, setCustomWindowNames] = useState({});
   const [editingWindowId, setEditingWindowId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  
+  // Get search settings with fallback defaults
+  const caseSensitive = settings?.search?.caseSensitive ?? false;
+  const searchInUrls = settings?.search?.searchInUrls ?? true;
+  
+  // Get appearance settings with fallback defaults
+  const viewDensity = settings?.appearance?.viewDensity ?? 'normal';
+  const reducedMotion = settings?.appearance?.reducedMotion ?? false;
+  
+  // Get accessibility settings with fallback defaults
+  const highContrast = settings?.accessibility?.highContrast ?? false;
   
   // Tutorial context
   const { 
@@ -131,17 +144,18 @@ function TabTreeContent({ tabHierarchy = [] }) {
   const fuzzyMatch = (text, search) => {
     if (!search) return true;
     
-    const searchLower = search.toLowerCase();
-    const textLower = text.toLowerCase();
+    // Use case-sensitive or case-insensitive matching based on setting
+    const searchText = caseSensitive ? search : search.toLowerCase();
+    const targetText = caseSensitive ? text : text.toLowerCase();
     
     // Simple fuzzy matching: check if all characters of search exist in order in text
     let searchIndex = 0;
-    for (let i = 0; i < textLower.length && searchIndex < searchLower.length; i++) {
-      if (textLower[i] === searchLower[searchIndex]) {
+    for (let i = 0; i < targetText.length && searchIndex < searchText.length; i++) {
+      if (targetText[i] === searchText[searchIndex]) {
         searchIndex++;
       }
     }
-    return searchIndex === searchLower.length;
+    return searchIndex === searchText.length;
   };
 
   // Recursively filter tabs based on search term
@@ -150,7 +164,7 @@ function TabTreeContent({ tabHierarchy = [] }) {
     
     return tabs.reduce((filtered, tab) => {
       const matchesTitle = fuzzyMatch(tab.title || '', searchTerm);
-      const matchesUrl = fuzzyMatch(tab.url || '', searchTerm);
+      const matchesUrl = searchInUrls ? fuzzyMatch(tab.url || '', searchTerm) : false;
       
       if (matchesTitle || matchesUrl) {
         // If parent matches, include all children
@@ -171,7 +185,7 @@ function TabTreeContent({ tabHierarchy = [] }) {
     }, []);
   };
 
-  const filteredHierarchy = useMemo(() => filterTabs(tabHierarchy), [tabHierarchy, searchTerm]);
+  const filteredHierarchy = useMemo(() => filterTabs(tabHierarchy), [tabHierarchy, searchTerm, caseSensitive, searchInUrls]);
 
   // Helper to count all tabs in a hierarchy (including children)
   const countAllTabsInHierarchy = (tabs) => {
@@ -230,6 +244,7 @@ function TabTreeContent({ tabHierarchy = [] }) {
   return (
     <DropZoneProvider>
       <div data-testid="tab-tree-container" className="tab-tree">
+        
         <div className="search-bar-container">
           <div className="search-input-container">
             <input
@@ -255,7 +270,7 @@ function TabTreeContent({ tabHierarchy = [] }) {
           <div className="empty-state">{getMessage('no_tabs_available', [], 'No tabs available')}</div>
         ) : (
           <div 
-            className="tab-tree-content"
+            className={`tab-tree-content view-density-${viewDensity} ${reducedMotion ? 'reduced-motion' : ''} ${highContrast ? 'high-contrast' : ''}`}
             role="tree"
             aria-label={getMessage('tree_aria_label', [], 'Tab hierarchy tree')}
           >

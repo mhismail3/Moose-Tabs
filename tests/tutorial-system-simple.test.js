@@ -3,31 +3,93 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import TabTreeComponent from '../src/components/TabTreeComponent';
 import { TutorialProvider, useTutorial, TUTORIAL_STEPS } from '../src/components/tutorial/TutorialContext';
+import { SettingsProvider } from '../src/contexts/SettingsContext';
 import '@testing-library/jest-dom';
 
-// Mock chrome APIs
+// Mock chrome APIs with stateful storage
+let mockStorage = {};
+
 global.chrome = {
   runtime: {
     sendMessage: jest.fn()
   },
   storage: {
     local: {
-      get: jest.fn().mockResolvedValue({}),
-      set: jest.fn().mockResolvedValue(),
-      remove: jest.fn().mockResolvedValue()
+      get: jest.fn().mockImplementation((keys) => {
+        if (typeof keys === 'string') {
+          return Promise.resolve({ [keys]: mockStorage[keys] });
+        } else if (Array.isArray(keys)) {
+          const result = {};
+          keys.forEach(key => {
+            if (mockStorage[key] !== undefined) {
+              result[key] = mockStorage[key];
+            }
+          });
+          return Promise.resolve(result);
+        } else {
+          // Return all stored values
+          return Promise.resolve({ ...mockStorage });
+        }
+      }),
+      set: jest.fn().mockImplementation((items) => {
+        Object.keys(items).forEach(key => {
+          mockStorage[key] = items[key];
+        });
+        return Promise.resolve();
+      }),
+      remove: jest.fn().mockImplementation((keys) => {
+        if (typeof keys === 'string') {
+          delete mockStorage[keys];
+        } else if (Array.isArray(keys)) {
+          keys.forEach(key => delete mockStorage[key]);
+        }
+        return Promise.resolve();
+      })
     }
   }
 };
 
+// Mock hooks
+jest.mock('../src/components/hooks/useDragDrop', () => ({
+  useDragDrop: () => ({
+    isDragging: false,
+    isOver: false,
+    canDrop: false,
+    showInvalid: false,
+    dropZoneType: null,
+    dragDropRef: { current: null }
+  })
+}));
+
+jest.mock('../src/components/hooks/useKeyboardNavigation', () => ({
+  useKeyboardNavigation: () => ({
+    handleKeyDown: jest.fn()
+  })
+}));
+
+jest.mock('../src/components/hooks/useTabAnimations', () => ({
+  useTabAnimations: () => ({
+    subscribe: jest.fn(() => () => {}),
+    isAnimating: jest.fn(() => false)
+  })
+}));
+
+jest.mock('../src/utils/i18n', () => ({
+  getMessage: jest.fn((key, params, fallback) => fallback || key),
+  getTabItemAriaLabel: jest.fn((title) => `Tab: ${title}`)
+}));
+
 // Wrapper component for testing
 const TestWrapper = ({ children }) => (
   <DndProvider backend={HTML5Backend}>
-    {children}
+    <SettingsProvider>
+      {children}
+    </SettingsProvider>
   </DndProvider>
 );
 
@@ -63,9 +125,9 @@ const mockTabHierarchy = [
 describe('Tutorial System - Core Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    global.chrome.storage.local.get.mockResolvedValue({});
-    global.chrome.storage.local.set.mockResolvedValue();
-    global.chrome.storage.local.remove.mockResolvedValue();
+    
+    // Reset mock storage between tests
+    mockStorage = {};
   });
 
   describe('Tutorial Context', () => {
@@ -149,12 +211,16 @@ describe('Tutorial System - Core Functionality', () => {
       });
 
       // Skip tutorial
-      fireEvent.click(screen.getByTestId('skip-tutorial'));
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('skip-tutorial'));
+        // Wait a bit for async operations to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+      });
 
       await waitFor(() => {
         expect(screen.getByTestId('tutorial-active')).toHaveTextContent('false');
         expect(screen.getByTestId('has-completed')).toHaveTextContent('true');
-      });
+      }, { timeout: 3000 });
     });
   });
 

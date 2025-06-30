@@ -3,7 +3,8 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { renderWithProviders } from './test-utils';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import TabTreeComponent from '../src/components/TabTreeComponent';
@@ -91,7 +92,7 @@ describe('Window Grouping Functionality', () => {
   });
 
   test('should group tabs by windows', () => {
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -103,7 +104,7 @@ describe('Window Grouping Functionality', () => {
   });
 
   test('should show correct tab count in window labels including children', () => {
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -120,7 +121,7 @@ describe('Window Grouping Functionality', () => {
   });
 
   test('should render tabs in correct window groups', () => {
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -147,7 +148,7 @@ describe('Window Grouping Functionality', () => {
       }
     ];
 
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={singleTabHierarchy} />
       </TestWrapper>
@@ -160,7 +161,7 @@ describe('Window Grouping Functionality', () => {
   });
 
   test('should handle empty hierarchy', () => {
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={[]} />
       </TestWrapper>
@@ -171,7 +172,7 @@ describe('Window Grouping Functionality', () => {
   });
 
   test('should filter tabs by search while maintaining window groups', () => {
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -193,7 +194,7 @@ describe('Window Grouping Functionality', () => {
   });
 
   test('should preserve hierarchy within window groups', () => {
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -215,7 +216,7 @@ describe('Window Grouping Functionality', () => {
   });
 
   test('should update tab count when hierarchy changes', () => {
-    const { rerender } = render(
+    const { rerender } = renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -253,7 +254,7 @@ describe('Window Grouping Functionality', () => {
     // Mock Chrome storage to return empty custom names
     global.chrome.storage.local.get.mockResolvedValue({});
 
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -292,7 +293,7 @@ describe('Window Grouping Functionality', () => {
   test('should cancel editing on Escape key', async () => {
     global.chrome.storage.local.get.mockResolvedValue({});
 
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -327,7 +328,7 @@ describe('Window Grouping Functionality', () => {
       customWindowNames: { '100': 'My Work Window', '200': 'Personal Window' }
     });
 
-    render(
+    renderWithProviders(
       <TestWrapper>
         <TabTreeComponent tabHierarchy={mockTabHierarchy} />
       </TestWrapper>
@@ -347,7 +348,7 @@ describe('Window Grouping Functionality', () => {
     
     // Should not throw an error
     expect(() => {
-      render(
+      renderWithProviders(
         <TestWrapper>
           <TabTreeComponent tabHierarchy={mockTabHierarchy} />
         </TestWrapper>
