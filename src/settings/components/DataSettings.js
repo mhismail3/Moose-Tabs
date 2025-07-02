@@ -117,7 +117,7 @@ function DataSettings() {
             />
             <label
               htmlFor="import-settings"
-              className="file-input-label"
+              className="file-input-label btn btn-secondary btn-small"
             >
               📤 Import Settings
             </label>

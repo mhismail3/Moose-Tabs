@@ -347,6 +347,12 @@
   border-color: var(--color-border-hover);
 }
 
+/* File input label small variant - ensures consistent sizing with other small buttons */
+.file-input-label.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+}
+
 /* Status Messages */
 .status-message {
   padding: 1rem;

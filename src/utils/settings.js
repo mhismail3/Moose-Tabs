@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS = {
   
   // Appearance settings
   appearance: {
-    viewDensity: 'normal', // 'compact', 'normal', 'comfortable'
+    viewDensity: 'compact', // 'compact', 'normal', 'comfortable'
     showTabUrls: true,
     showFavicons: true,
     reducedMotion: false,

@@ -69,21 +69,6 @@ function SearchSettings() {
           </div>
         </div>
 
-        <div className="setting-item">
-          <div className="setting-info">
-            <h4 className="setting-label">Highlight Results</h4>
-            <p className="setting-description">
-              Highlight matching text in search results
-            </p>
-          </div>
-          <div className="setting-control">
-            <button
-              className={`toggle-switch ${search.highlightResults ? 'active' : ''}`}
-              onClick={() => toggleSetting('highlightResults')}
-              aria-label={`${search.highlightResults ? 'Disable' : 'Enable'} result highlighting`}
-            />
-          </div>
-        </div>
       </div>
 
       {/* Status Messages */}
