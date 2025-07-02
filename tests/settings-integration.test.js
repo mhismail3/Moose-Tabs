@@ -182,7 +182,7 @@ describe('Settings Integration Tests', () => {
 
       // Verify some default values
       expect(settings.theme.mode).toBe('auto');
-      expect(settings.appearance.viewDensity).toBe('normal');
+      expect(settings.appearance.viewDensity).toBe('compact');
       expect(settings.appearance.showTabUrls).toBe(true);
       expect(settings.appearance.showFavicons).toBe(true);
       expect(settings.tabManagement.defaultExpandState).toBe('expanded');
@@ -223,7 +223,7 @@ describe('Settings Integration Tests', () => {
 
       // Should return default settings on error
       expect(settings).toHaveProperty('appearance');
-      expect(settings.appearance.viewDensity).toBe('normal');
+      expect(settings.appearance.viewDensity).toBe('compact');
     });
 
     test('handles invalid setting paths gracefully', async () => {

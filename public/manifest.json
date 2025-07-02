@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "__MSG_app_title__",
+  "name": "Moose Tabs - Organize your tabs",
   "version": "1.0.0",
-  "description": "__MSG_extension_description__",
+  "description": "Visualize tab hierarchy in a tree view sidebar. Organize tabs by opener relationships with drag-and-drop, search, and grouping.",
   "default_locale": "en",
   "background": {
     "service_worker": "background.js"
@@ -17,7 +17,7 @@
     "default_path": "index.html"
   },
   "action": {
-    "default_title": "__MSG_action_title__"
+    "default_title": "Open Tab Tree - View tabs in hierarchical sidebar"
   },
   "web_accessible_resources": [
     {
