@@ -39,7 +39,7 @@ A Chrome extension that transforms your chaotic tab bar into an organized, hiera
 ## 🚀 Installation
 
 ### From Chrome Web Store (Recommended)
-1. Visit the [Chrome Web Store page](chrome-web-store-link)
+1. Visit the [Chrome Web Store page](https://chromewebstore.google.com/detail/moose-tabs-organize-your/ecgdnamlhfodmjokjobadclppaddeond)
 2. Click "Add to Chrome"
 3. Click the extension icon to open the sidebar panel
 
