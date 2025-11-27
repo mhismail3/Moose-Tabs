@@ -25,11 +25,22 @@ body {
 .sidebar-container {
   padding: 0;
   min-height: 100vh;
+  height: 100vh;
   background: var(--color-bg-primary);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+}
+
+.sidebar-container .tab-tree {
+  min-height: 0;
+}
+
+.sidebar-container .window-label {
+  position: static;
+  top: auto;
+  z-index: 1;
 }
 
 /* Ambient background effect - Green Theme */
