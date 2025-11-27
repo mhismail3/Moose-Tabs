@@ -1,4 +1,4 @@
-/* Simplified Theme System */
+/* Simplified Theme System - Green-Based Color Palette */
 
 :root {
   color-scheme: light dark;
@@ -12,11 +12,23 @@
   --color-text-muted: #9ca3af;
   --color-border: #e5e7eb;
   --color-border-hover: #9ca3af;
-  --color-accent: #99a4a1;
-  --color-accent-0: #309976;
-  --color-accent-1: #f59e0b;
-  --color-accent-2: #ef4444;
-  --color-accent-3: #4f44ef;
+  
+  /* Green-Based Accent System */
+  --color-accent: #309976;
+  --color-accent-0: #309976;  /* Primary green - logo color */
+  --color-accent-1: #26a269;  /* Lighter green */
+  --color-accent-2: #1f8a5a;  /* Deeper green */
+  --color-accent-3: #2dd4bf;  /* Teal/cyan green */
+  --color-accent-light: rgba(48, 153, 118, 0.1);
+  --color-accent-medium: rgba(48, 153, 118, 0.2);
+  
+  /* Hierarchy level colors - green spectrum */
+  --color-level-0: #309976;
+  --color-level-1: #26a269;
+  --color-level-2: #1f8a5a;
+  --color-level-3: #2dd4bf;
+  
+  /* Status Colors */
   --color-error: #ef4444;
   --color-success: #10b981;
   --color-warning: #f59e0b;
@@ -25,6 +37,12 @@
   --color-backdrop: rgba(255, 255, 255, 0.8);
   --color-focus: var(--color-accent);
   --color-hover: rgba(0, 0, 0, 0.1);
+  
+  /* Drop zone label colors - high contrast */
+  --color-drop-sibling-text: #166534;
+  --color-drop-sibling-bg: rgba(22, 101, 52, 0.15);
+  --color-drop-child-text: #115e59;
+  --color-drop-child-bg: rgba(17, 94, 89, 0.15);
 }
 
 /* Dark Theme */
@@ -40,6 +58,12 @@
     --color-border-hover: rgba(255, 255, 255, 0.2);
     --color-backdrop: rgba(0, 0, 0, 0.8);
     --color-hover: rgba(255, 255, 255, 0.1);
+    
+    /* Drop zone label colors - high contrast for dark mode */
+    --color-drop-sibling-text: #4ade80;
+    --color-drop-sibling-bg: rgba(74, 222, 128, 0.2);
+    --color-drop-child-text: #5eead4;
+    --color-drop-child-bg: rgba(94, 234, 212, 0.2);
   }
 }
 
@@ -56,6 +80,10 @@
   --color-border-hover: #9ca3af;
   --color-backdrop: rgba(255, 255, 255, 0.8);
   --color-hover: rgba(0, 0, 0, 0.1);
+  --color-drop-sibling-text: #166534;
+  --color-drop-sibling-bg: rgba(22, 101, 52, 0.15);
+  --color-drop-child-text: #115e59;
+  --color-drop-child-bg: rgba(17, 94, 89, 0.15);
 }
 
 .theme-dark {
@@ -70,4 +98,8 @@
   --color-border-hover: rgba(255, 255, 255, 0.2);
   --color-backdrop: rgba(0, 0, 0, 0.8);
   --color-hover: rgba(255, 255, 255, 0.1);
+  --color-drop-sibling-text: #4ade80;
+  --color-drop-sibling-bg: rgba(74, 222, 128, 0.2);
+  --color-drop-child-text: #5eead4;
+  --color-drop-child-bg: rgba(94, 234, 212, 0.2);
 }

@@ -9,6 +9,7 @@
   },
   "permissions": [
     "tabs",
+    "tabGroups",
     "sidePanel",
     "storage",
     "contextMenus"
@@ -17,11 +18,19 @@
     "default_path": "index.html"
   },
   "action": {
-    "default_title": "Open Tab Tree - View tabs in hierarchical sidebar"
+    "default_title": "Open Tab Tree - View tabs in hierarchical sidebar",
+    "default_popup": ""
   },
   "web_accessible_resources": [
     {
-      "resources": ["settings.html", "settings-bundle.js", "settings-loading.css", "settings-init.js"],
+      "resources": [
+        "settings.html", 
+        "settings-bundle.js", 
+        "settings-loading.css", 
+        "settings-init.js",
+        "popup.html",
+        "popup-bundle.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ],

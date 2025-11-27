@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moose Tabs</title>
+  <style>
+    /* Popup-specific base styles */
+    * {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 400px;
+      min-height: 200px;
+      max-height: 600px;
+      overflow: hidden;
+    }
+    
+    #root {
+      width: 100%;
+      height: 100%;
+      min-height: 200px;
+      max-height: 600px;
+      overflow: hidden;
+    }
+    
+    /* Loading state styles */
+    .popup-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 300px;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      .popup-loading {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        color: #e5e5e5;
+      }
+    }
+    
+    .popup-loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(99, 102, 241, 0.2);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    .popup-loading-text {
+      color: #64748b;
+      font-size: 14px;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      .popup-loading-text {
+        color: #94a3b8;
+      }
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div class="popup-loading">
+      <div class="popup-loading-spinner"></div>
+      <div class="popup-loading-text">Loading tabs...</div>
+    </div>
+  </div>
+  <script src="popup-bundle.js"></script>
+</body>
+</html>
+
+

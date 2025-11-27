@@ -4,6 +4,7 @@ import { getMessage } from '../utils/i18n';
 import { DropZoneProvider } from './context/DropZoneContext';
 import { TutorialProvider, useTutorial } from './tutorial/TutorialContext';
 import TutorialOverlay from './tutorial/TutorialOverlay';
+import AIOrganizePanel from './AIOrganizePanel';
 import { useSettings } from '../contexts/SettingsContext';
 import './TabTree.css';
 
@@ -14,6 +15,10 @@ function TabTreeContent({ tabHierarchy = [] }) {
   const [customWindowNames, setCustomWindowNames] = useState({});
   const [editingWindowId, setEditingWindowId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  
+  // Check if AI is enabled
+  const aiEnabled = settings?.ai?.enabled ?? false;
   
   // Get search settings with fallback defaults
   const caseSensitive = settings?.search?.caseSensitive ?? false;
@@ -246,23 +251,35 @@ function TabTreeContent({ tabHierarchy = [] }) {
       <div data-testid="tab-tree-container" className="tab-tree">
         
         <div className="search-bar-container">
-          <div className="search-input-container">
-            <input
-              type="text"
-              className="search-bar"
-              placeholder="Search tabs"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="Search tabs"
-            />
-            <button
-              className={`search-clear-btn ${searchTerm.trim() ? 'visible' : ''}`}
-              onClick={handleClearSearch}
-              aria-label="Clear search"
-              type="button"
-            >
-              ×
-            </button>
+          <div className="search-input-wrapper">
+            <div className="search-input-container">
+              <input
+                type="text"
+                className="search-bar"
+                placeholder="Search tabs"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Search tabs"
+              />
+              <button
+                className={`search-clear-btn ${searchTerm.trim() ? 'visible' : ''}`}
+                onClick={handleClearSearch}
+                aria-label="Clear search"
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+            {aiEnabled && (
+              <button
+                className="ai-organize-btn"
+                onClick={() => setShowAIPanel(true)}
+                title="Organize tabs with AI"
+                aria-label="Organize tabs with AI"
+              >
+                🤖
+              </button>
+            )}
           </div>
         </div>
         
@@ -327,6 +344,14 @@ function TabTreeContent({ tabHierarchy = [] }) {
           </div>
         )}
       </div>
+      
+      {/* AI Organization Panel */}
+      {showAIPanel && (
+        <AIOrganizePanel
+          tabs={tabHierarchy}
+          onClose={() => setShowAIPanel(false)}
+        />
+      )}
       
       {/* Tutorial Overlay */}
       <TutorialOverlay />
