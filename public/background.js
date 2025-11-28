@@ -168,13 +168,24 @@ chrome.runtime.onConnect.addListener((port) => {
 
     // Send initial hierarchy
     ensureInitialized().then(() => {
-      const hierarchy = tabHierarchy.getHierarchy(null);
-      port.postMessage({
-        type: 'hierarchyUpdated',
-        hierarchy,
-        timestamp: Date.now()
-  });
-});
+      // Check if port is still connected before sending
+      if (!sidebarPorts.has(portId)) {
+        console.log(`Port ${portId} disconnected before initial hierarchy could be sent`);
+        return;
+      }
+      
+      try {
+        const hierarchy = tabHierarchy.getHierarchy(null);
+        port.postMessage({
+          type: 'hierarchyUpdated',
+          hierarchy,
+          timestamp: Date.now()
+        });
+      } catch (error) {
+        console.warn(`Failed to send initial hierarchy to port ${portId}:`, error.message);
+        sidebarPorts.delete(portId);
+      }
+    });
 
     // Handle messages from this port
     port.onMessage.addListener((message) => {
@@ -201,6 +212,12 @@ async function handlePortMessage(port, portId, message) {
   try {
     await ensureInitialized();
 
+    // Check if port is still connected after async operation
+    if (!sidebarPorts.has(portId)) {
+      console.log(`Port ${portId} disconnected during message handling`);
+      return;
+    }
+
     switch (message.action) {
       case 'getHierarchy':
         const hierarchy = tabHierarchy.getHierarchy(message.windowId || null);
@@ -221,12 +238,28 @@ async function handlePortMessage(port, portId, message) {
         console.warn('Unknown port message action:', message.action);
     }
   } catch (error) {
+    // Check if this is a disconnected port error
+    if (error.message?.includes('disconnected')) {
+      console.log(`Port ${portId} disconnected, removing from active ports`);
+      sidebarPorts.delete(portId);
+      return;
+    }
+    
     console.error('Error handling port message:', error);
-    port.postMessage({
-      type: 'error',
-      requestId: message.requestId,
-      error: error.message
-    });
+    
+    // Only try to send error response if port is still connected
+    if (sidebarPorts.has(portId)) {
+      try {
+        port.postMessage({
+          type: 'error',
+          requestId: message.requestId,
+          error: error.message
+        });
+      } catch (sendError) {
+        console.warn(`Failed to send error to port ${portId}:`, sendError.message);
+        sidebarPorts.delete(portId);
+      }
+    }
   }
 }
 

@@ -426,6 +426,7 @@ class AIService {
     }
 
     const { feedback } = options;
+    const maxRetries = 2;
     
     const tabData = tabs.map(tab => ({
       id: tab.id,
@@ -433,126 +434,141 @@ class AIService {
       url: tab.url || '',
       domain: extractDomain(tab.url)
     }));
-
-    const systemPrompt = this.getOrganizationSystemPrompt(strategy);
-    let userPrompt = this.getOrganizationUserPrompt(tabData, strategy);
     
-    // Add user feedback if provided (ensure it's a string)
-    if (feedback && typeof feedback === 'string' && feedback.trim()) {
-      userPrompt += `\n\nIMPORTANT USER FEEDBACK - adjust your organization based on this:
-"${feedback.trim()}"
+    const validIds = tabData.map(t => t.id);
 
-Please incorporate this feedback while still following all the JSON format requirements.`;
-    }
-
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ];
-
-    try {
-      console.log('Calling AI with', tabData.length, 'tabs using strategy:', strategy);
+    // Try up to maxRetries times with error-specific feedback
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const systemPrompt = this.getOrganizationSystemPrompt(strategy, tabData.length, validIds);
+      let userPrompt = this.getOrganizationUserPrompt(tabData, strategy);
       
-      const response = await this.callAPI(messages, {
-        maxTokens: 2048,
-        temperature: feedback ? 0.5 : 0.3
-      });
-
-      console.log('AI response received, parsing...');
-      const result = this.parseOrganizationResponse(response, tabData);
-      
-      if (!result.success) {
-        console.error('Failed to parse AI response:', result.error);
+      // Add user feedback if provided (ensure it's a string)
+      if (feedback && typeof feedback === 'string' && feedback.trim()) {
+        userPrompt += `\n\nUSER REQUEST: "${feedback.trim()}"`;
       }
       
-      return result;
-    } catch (error) {
-      console.error('AI call failed:', error);
-      throw error; // Re-throw to let caller handle with proper message
+      // Add retry context with specific errors from previous attempt
+      if (attempt > 0 && options._lastValidationErrors) {
+        const errorFeedback = options._lastValidationErrors.join('; ');
+        userPrompt += `\n\nPREVIOUS ATTEMPT FAILED - FIX THESE ERRORS:
+${errorFeedback}
+
+Remember: Use ONLY these IDs exactly once each: [${validIds.join(', ')}]`;
+      }
+
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ];
+
+      try {
+        console.log(`Calling AI (attempt ${attempt + 1}/${maxRetries + 1}) with ${tabData.length} tabs using strategy: ${strategy}`);
+        
+        // Use very low temperature for structured output consistency
+        const response = await this.callAPI(messages, {
+          maxTokens: 2048,
+          temperature: 0.1
+        });
+
+        console.log('AI response received, parsing and validating...');
+        const result = this.parseOrganizationResponse(response, tabData);
+        
+        if (result.success) {
+          if (attempt > 0) {
+            console.log(`Success on retry attempt ${attempt + 1}`);
+          }
+          return result;
+        }
+        
+        // If validation failed and we have retries left, try again with error feedback
+        if (attempt < maxRetries && result.validationErrors) {
+          console.warn(`Validation failed (attempt ${attempt + 1}), retrying...`, result.validationErrors);
+          options._lastValidationErrors = result.validationErrors;
+          // Small delay before retry
+          await new Promise(resolve => setTimeout(resolve, 300));
+          continue;
+        }
+        
+        // Out of retries, return the error
+        console.error('Failed to parse AI response after retries:', result.error);
+        return result;
+        
+      } catch (error) {
+        console.error('AI call failed:', error);
+        // Don't retry on API errors, just throw
+        throw error;
+      }
     }
+    
+    // Should not reach here, but just in case
+    return {
+      success: false,
+      error: 'Failed to organize tabs after multiple attempts'
+    };
   }
 
   /**
    * Get system prompt for organization
    */
-  getOrganizationSystemPrompt(strategy) {
-    const basePrompt = `You are an expert at organizing browser tabs into logical hierarchical groups.
-Your task is to analyze tab titles and URLs and suggest a hierarchical organization.
-
-IMPORTANT RULES:
-1. Output ONLY valid JSON, no explanations or markdown
-2. Every tab ID from the input MUST appear exactly once in the output
-3. Create a meaningful hierarchy with parent-child relationships
-4. Group related tabs together
-5. Maximum nesting depth is 3 levels
-6. Use tab IDs (numbers) exactly as provided`;
-
-    const strategyPrompts = {
-      smart: `
-Strategy: Smart grouping based on content, topics, and relationships.
-- Group tabs by topic/theme when clear relationships exist
-- Keep related research together
-- Group tabs from same project/task together`,
-
-      domain: `
-Strategy: Group by domain/website.
-- Primary grouping by domain (e.g., all GitHub tabs together)
-- Secondary grouping by subdomain or path if many from same domain`,
-
-      topic: `
-Strategy: Group by content topic/theme.
-- Ignore domains, focus on what the pages are about
-- Group by topic: work, research, entertainment, social, etc.
-- Create intuitive thematic groups`,
-
-      activity: `
-Strategy: Group by likely user activity/task.
-- Group tabs that seem part of the same workflow
-- Consider: research tasks, shopping, reading, work projects
-- Group by what the user was likely trying to accomplish`
+  getOrganizationSystemPrompt(strategy, tabCount, validIds) {
+    const idList = validIds.join(', ');
+    
+    const strategyInstructions = {
+      smart: `Group tabs intelligently by topic, project, or theme. Related tabs should be in the same group.`,
+      domain: `Group tabs by their website domain. All tabs from the same website go together.`,
+      topic: `Group tabs by content topic (work, shopping, research, entertainment, etc.), ignoring which website they're from.`,
+      activity: `Group tabs by user activity or task (e.g., "Planning Trip", "Work Project", "Shopping").`
     };
 
-    return basePrompt + (strategyPrompts[strategy] || strategyPrompts.smart);
+    return `You are a tab organization assistant. You will assign each browser tab to exactly one group.
+
+CRITICAL RULES - FOLLOW EXACTLY:
+1. You will receive exactly ${tabCount} tabs
+2. The ONLY valid tab IDs are: [${idList}]
+3. Each tab ID MUST appear EXACTLY ONCE in your output
+4. Do NOT invent, duplicate, or skip any tab ID
+5. Output ONLY valid JSON, no markdown, no explanations
+
+${strategyInstructions[strategy] || strategyInstructions.smart}
+
+Create 2-6 groups with short, descriptive names (1-3 words).`;
   }
 
   /**
    * Get user prompt for organization
    */
   getOrganizationUserPrompt(tabData, strategy) {
-    const tabList = tabData.map(t => 
-      `- ID: ${t.id}, Title: "${t.title}", Domain: ${t.domain}`
+    // Number tabs for clarity and list valid IDs prominently
+    const tabList = tabData.map((t, idx) => 
+      `${idx + 1}. [ID: ${t.id}] "${t.title}" (${t.domain})`
     ).join('\n');
+    
+    const validIds = tabData.map(t => t.id);
 
-    return `Organize these ${tabData.length} tabs into a hierarchy:
+    return `TABS TO ORGANIZE (${tabData.length} total):
+Valid IDs: [${validIds.join(', ')}]
 
 ${tabList}
 
-Return a JSON object with this exact structure:
+Assign each tab to a group. Output this exact JSON format:
 {
-  "groups": [
-    {
-      "name": "Group Name",
-      "tabs": [tab_id1, tab_id2],
-      "children": [
-        {
-          "name": "Subgroup Name",
-          "tabs": [tab_id3]
-        }
-      ]
-    }
-  ],
-  "explanation": "Brief explanation of the organization"
+  "assignments": [
+    {"id": <tab_id>, "group": "<group_name>"},
+    {"id": <tab_id>, "group": "<group_name>"}
+  ]
 }
 
-REQUIREMENTS:
-- Every tab ID MUST appear exactly once
-- "tabs" contains tab IDs (numbers)
-- "children" is optional for nested groups
-- Output ONLY the JSON, nothing else`;
+CHECKLIST before responding:
+- Does my output have exactly ${tabData.length} assignments? (REQUIRED)
+- Is each ID from [${validIds.join(', ')}] used exactly once? (REQUIRED)
+- Are group names short (1-3 words)? (REQUIRED)
+
+Output ONLY the JSON:`;
   }
 
   /**
-   * Parse the organization response from AI
+   * Parse and strictly validate the organization response from AI
+   * Returns validation errors if the response is invalid
    */
   parseOrganizationResponse(response, originalTabs) {
     try {
@@ -560,7 +576,8 @@ REQUIREMENTS:
       if (!response || typeof response !== 'string') {
         return {
           success: false,
-          error: 'Invalid AI response format'
+          error: 'Invalid AI response format',
+          validationErrors: ['Response is not a string']
         };
       }
       
@@ -572,39 +589,42 @@ REQUIREMENTS:
         jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '');
       }
       
-      const parsed = JSON.parse(jsonStr);
-      
-      // Validate that all tabs are accounted for
-      const allTabIds = new Set(originalTabs.map(t => t.id));
-      const organizedIds = new Set();
-      
-      const collectIds = (groups) => {
-        for (const group of groups) {
-          if (group.tabs) {
-            group.tabs.forEach(id => organizedIds.add(id));
-          }
-          if (group.children) {
-            collectIds(group.children);
-          }
-        }
-      };
-      
-      collectIds(parsed.groups || []);
-      
-      // Check for missing tabs
-      const missingIds = [...allTabIds].filter(id => !organizedIds.has(id));
-      if (missingIds.length > 0) {
-        // Add missing tabs to an "Other" group
-        parsed.groups = parsed.groups || [];
-        parsed.groups.push({
-          name: 'Other',
-          tabs: missingIds
-        });
+      // Try to find JSON object in the response
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0];
       }
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonStr);
+      } catch (parseError) {
+        return {
+          success: false,
+          error: 'Failed to parse JSON from AI response',
+          validationErrors: [`JSON parse error: ${parseError.message}`],
+          rawResponse: response
+        };
+      }
+      
+      // Validate the new flat assignment format
+      const validationResult = this.validateAssignments(parsed, originalTabs);
+      
+      if (!validationResult.valid) {
+        return {
+          success: false,
+          error: 'AI response failed validation',
+          validationErrors: validationResult.errors,
+          rawResponse: response
+        };
+      }
+      
+      // Convert flat assignments to groups structure
+      const organization = this.convertAssignmentsToGroups(parsed.assignments);
       
       return {
         success: true,
-        organization: parsed,
+        organization,
         tabCount: originalTabs.length
       };
     } catch (error) {
@@ -612,9 +632,113 @@ REQUIREMENTS:
       return {
         success: false,
         error: 'Failed to parse AI response',
+        validationErrors: [error.message],
         rawResponse: response
       };
     }
+  }
+
+  /**
+   * Strictly validate the assignments from AI response
+   * Checks for: missing IDs, duplicate IDs, hallucinated IDs, count mismatch
+   */
+  validateAssignments(parsed, originalTabs) {
+    const errors = [];
+    const validIds = new Set(originalTabs.map(t => t.id));
+    
+    // Check if assignments array exists
+    if (!parsed.assignments || !Array.isArray(parsed.assignments)) {
+      errors.push('Response missing "assignments" array');
+      return { valid: false, errors };
+    }
+    
+    const assignments = parsed.assignments;
+    const seenIds = new Set();
+    const duplicateIds = [];
+    const hallucinatedIds = [];
+    
+    // Check each assignment
+    for (const assignment of assignments) {
+      if (!assignment || typeof assignment.id === 'undefined') {
+        errors.push('Assignment missing "id" field');
+        continue;
+      }
+      
+      const id = assignment.id;
+      
+      // Check for duplicates
+      if (seenIds.has(id)) {
+        duplicateIds.push(id);
+      } else {
+        seenIds.add(id);
+      }
+      
+      // Check for hallucinated IDs (not in original tabs)
+      if (!validIds.has(id)) {
+        hallucinatedIds.push(id);
+      }
+      
+      // Check for missing group name
+      if (!assignment.group || typeof assignment.group !== 'string') {
+        errors.push(`Assignment for ID ${id} missing valid "group" name`);
+      }
+    }
+    
+    // Report duplicates
+    if (duplicateIds.length > 0) {
+      errors.push(`Duplicate tab IDs: [${duplicateIds.join(', ')}]`);
+    }
+    
+    // Report hallucinated IDs
+    if (hallucinatedIds.length > 0) {
+      errors.push(`Invalid/hallucinated tab IDs: [${hallucinatedIds.join(', ')}]`);
+    }
+    
+    // Check for missing IDs
+    const missingIds = [...validIds].filter(id => !seenIds.has(id));
+    if (missingIds.length > 0) {
+      errors.push(`Missing tab IDs: [${missingIds.join(', ')}]`);
+    }
+    
+    // Check count
+    if (assignments.length !== originalTabs.length) {
+      errors.push(`Expected ${originalTabs.length} assignments, got ${assignments.length}`);
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+      duplicateIds,
+      hallucinatedIds,
+      missingIds
+    };
+  }
+
+  /**
+   * Convert flat assignments array to groups structure for Chrome Tab Groups
+   */
+  convertAssignmentsToGroups(assignments) {
+    const groupMap = new Map();
+    
+    // Group assignments by group name
+    for (const assignment of assignments) {
+      const groupName = assignment.group.trim();
+      if (!groupMap.has(groupName)) {
+        groupMap.set(groupName, []);
+      }
+      groupMap.get(groupName).push(assignment.id);
+    }
+    
+    // Convert to groups array (flat, no children - Chrome doesn't support nested groups)
+    const groups = [];
+    for (const [name, tabs] of groupMap) {
+      groups.push({ name, tabs });
+    }
+    
+    return {
+      groups,
+      explanation: `Organized ${assignments.length} tabs into ${groups.length} groups`
+    };
   }
 
   /**

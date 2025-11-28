@@ -93,7 +93,7 @@ function SettingsContainer() {
       <header className="settings-header">
         <div className="settings-header-content">
           <div className="settings-logo">
-            <span className="settings-logo-icon">🦌</span>
+            <img src="/icons/icon48.png" alt="Moose Tabs" className="settings-logo-icon" />
             <div className="settings-logo-text">
               <h1 className="settings-title">Settings</h1>
               <p className="settings-subtitle">Customize your Moose Tabs experience</p>
