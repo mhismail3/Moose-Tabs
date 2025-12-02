@@ -233,10 +233,10 @@ const TutorialOverlay = () => {
       aria-describedby="tutorial-description"
       aria-live="polite"
     >
-      {/* Dark backdrop */}
-      <div className="tutorial-backdrop" />
+      {/* Dark backdrop - only for overlay steps (spotlight creates its own darkening) */}
+      {isOverlayStep && <div className="tutorial-backdrop" />}
       
-      {/* Spotlight for highlighted elements */}
+      {/* Spotlight for highlighted elements - includes its own dark overlay via box-shadow */}
       {isHighlightStep && spotlight && (
         <div 
           className="tutorial-spotlight"

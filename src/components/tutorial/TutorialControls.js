@@ -29,7 +29,7 @@ const TutorialControls = () => {
           disabled={isAnimating}
           aria-label="Skip tutorial"
         >
-          Skip Tutorial
+          Skip
         </button>
       )}
 
@@ -40,9 +40,9 @@ const TutorialControls = () => {
             className="tutorial-btn tutorial-btn-secondary"
             onClick={previousStep}
             disabled={isAnimating}
-            aria-label="Previous step"
+            aria-label="Go to previous step"
           >
-            ← Previous
+            Back
           </button>
         )}
 
@@ -53,20 +53,18 @@ const TutorialControls = () => {
           disabled={isAnimating}
           aria-label={
             currentStepData?.isCompletion 
-              ? 'Finish tutorial' 
+              ? 'Complete tutorial and get started' 
               : isLastStep 
-                ? 'Finish' 
-                : 'Next step'
+                ? 'Finish tutorial' 
+                : 'Continue to next step'
           }
         >
           {currentStepData?.isCompletion ? (
-            <>
-              🚀 Let's Go!
-            </>
+            'Get Started'
           ) : isLastStep ? (
             'Finish'
           ) : (
-            'Next →'
+            'Continue'
           )}
         </button>
       </div>
@@ -74,16 +72,16 @@ const TutorialControls = () => {
       {/* Keyboard shortcut hints */}
       <div className="tutorial-keyboard-hints">
         <span className="keyboard-hint">
-          <kbd>Esc</kbd> to skip
+          <kbd>Esc</kbd> skip
         </span>
-        {!isLastStep && (
+        {!isLastStep && !currentStepData?.isCompletion && (
           <span className="keyboard-hint">
             <kbd>→</kbd> next
           </span>
         )}
-        {!isFirstStep && (
+        {!isFirstStep && !currentStepData?.isCompletion && (
           <span className="keyboard-hint">
-            <kbd>←</kbd> previous
+            <kbd>←</kbd> back
           </span>
         )}
       </div>

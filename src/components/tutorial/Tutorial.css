@@ -1,6 +1,20 @@
-/* Tutorial System Styles */
+/* Tutorial System Styles - Moose Tabs Green Theme */
 
-/* Main Overlay */
+/* ============================================
+   BASE STYLES & TYPOGRAPHY
+   ============================================ */
+
+.tutorial-overlay,
+.tutorial-tooltip,
+.tutorial-controls,
+.tutorial-progress {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ============================================
+   OVERLAY & BACKDROP
+   ============================================ */
+
 .tutorial-overlay {
   position: fixed;
   top: 0;
@@ -10,7 +24,7 @@
   z-index: 10000;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--transition-fast);
 }
 
 .tutorial-overlay.active {
@@ -19,139 +33,110 @@
 }
 
 .tutorial-overlay.animating {
-  transition: opacity 0.2s ease-in-out;
+  transition: opacity 0.2s ease-out;
 }
 
-/* Dark Backdrop */
 .tutorial-backdrop {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
-  animation: backdropFadeIn 0.3s ease-out;
+  background: rgba(0, 0, 0, 0.6);
+  /* No blur - keeps highlighted content clearly visible */
+  animation: backdropFadeIn 0.25s ease-out;
 }
 
 @keyframes backdropFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Spotlight Effect */
+/* ============================================
+   SPOTLIGHT EFFECT
+   ============================================ */
+
 .tutorial-spotlight {
   position: absolute;
   background: transparent;
   box-shadow: 
-    0 0 0 4px rgba(99, 102, 241, 0.4),
-    0 0 0 9999px rgba(0, 0, 0, 0.4);
-  border-radius: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    0 0 0 2px rgba(48, 153, 118, 0.5),
+    0 0 0 9999px rgba(0, 0, 0, 0.65);
+  border-radius: var(--radius-lg, 8px);
+  transition: all var(--transition-normal);
   pointer-events: none;
-  animation: spotlightPulse 2s ease-in-out infinite;
+  animation: spotlightPulse 4s ease-in-out infinite;
 }
 
 @keyframes spotlightPulse {
   0%, 100% {
     box-shadow: 
-      0 0 0 4px rgba(99, 102, 241, 0.4),
-      0 0 0 9999px rgba(0, 0, 0, 0.4);
+      0 0 0 2px rgba(48, 153, 118, 0.5),
+      0 0 0 9999px rgba(0, 0, 0, 0.65);
   }
   50% {
     box-shadow: 
-      0 0 0 8px rgba(99, 102, 241, 0.6),
-      0 0 0 9999px rgba(0, 0, 0, 0.4);
+      0 0 0 3px rgba(48, 153, 118, 0.65),
+      0 0 8px 2px rgba(48, 153, 118, 0.15),
+      0 0 0 9999px rgba(0, 0, 0, 0.65);
   }
 }
 
-/* Target Element Highlighting */
+/* ============================================
+   TARGET ELEMENT HIGHLIGHTING
+   ============================================ */
+
 .tutorial-target {
   position: relative;
   z-index: 10001 !important;
 }
 
-/* Target Animation Classes */
 .tutorial-animation-pulse {
-  animation: tutorialPulse 1.5s ease-in-out infinite;
-}
-
-.tutorial-animation-bounce {
-  animation: tutorialBounce 1s ease-in-out infinite;
-}
-
-.tutorial-animation-shake {
-  animation: tutorialShake 0.8s ease-in-out infinite;
+  animation: tutorialPulse 3.5s ease-in-out infinite;
 }
 
 .tutorial-animation-glow {
-  animation: tutorialGlow 2s ease-in-out infinite;
+  animation: tutorialGlow 3.5s ease-in-out infinite;
 }
 
 .tutorial-animation-slideDown {
-  animation: tutorialSlideDown 0.6s ease-out;
+  animation: tutorialSlideDown 0.4s ease-out;
 }
 
 .tutorial-animation-slideLeft {
-  animation: tutorialSlideLeft 0.6s ease-out;
+  animation: tutorialSlideLeft 0.4s ease-out;
 }
 
 .tutorial-animation-fadeIn {
-  animation: tutorialFadeIn 0.6s ease-out;
+  animation: tutorialFadeIn 0.4s ease-out;
 }
+
+/* Removed overly flashy bounce and shake animations */
 
 @keyframes tutorialPulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 0 0 rgba(48, 153, 118, 0.15);
   }
   50% {
-    transform: scale(1.02);
-    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.1);
-  }
-}
-
-@keyframes tutorialBounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-8px);
-  }
-  60% {
-    transform: translateY(-4px);
-  }
-}
-
-@keyframes tutorialShake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-2px);
-  }
-  75% {
-    transform: translateX(2px);
+    transform: scale(1.005);
+    box-shadow: 0 0 0 4px rgba(48, 153, 118, 0.08);
   }
 }
 
 @keyframes tutorialGlow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.0);
+    box-shadow: 0 0 0 0 rgba(48, 153, 118, 0);
   }
   50% {
-    box-shadow: 0 0 20px 4px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 10px 1px rgba(48, 153, 118, 0.15);
   }
 }
 
 @keyframes tutorialSlideDown {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-12px);
   }
   to {
     opacity: 1;
@@ -162,7 +147,7 @@
 @keyframes tutorialSlideLeft {
   from {
     opacity: 0;
-    transform: translateX(-20px);
+    transform: translateX(-12px);
   }
   to {
     opacity: 1;
@@ -171,27 +156,36 @@
 }
 
 @keyframes tutorialFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Tooltip Styles */
+/* ============================================
+   TOOLTIP STYLES
+   ============================================ */
+
 .tutorial-tooltip {
   position: absolute;
   background: var(--color-bg-primary, #ffffff);
-  border: 2px solid var(--color-accent, #6366f1);
-  border-radius: 16px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-xl, 12px);
   box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 360px;
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  max-width: 340px;
   min-width: 280px;
   z-index: 10002;
-  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+
+.tutorial-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-accent-0, #309976), var(--color-accent-3, #2dd4bf));
 }
 
 .tutorial-tooltip.overlay-style {
@@ -199,20 +193,20 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  max-width: 480px;
-  min-width: 360px;
-  animation: tooltipSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 400px;
+  min-width: 320px;
+  animation: tooltipSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tutorial-tooltip.highlight-style {
   position: absolute !important;
-  animation: tooltipBounceInHighlight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  animation: tooltipFadeUp 0.3s ease-out;
 }
 
 @keyframes tooltipSlideIn {
   from {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -50%) scale(0.95);
   }
   to {
     opacity: 1;
@@ -220,70 +214,51 @@
   }
 }
 
-@keyframes tooltipBounceIn {
-  0% {
+@keyframes tooltipFadeUp {
+  from {
     opacity: 0;
-    transform: scale(0.3);
+    transform: translateY(8px);
   }
-  50% {
+  to {
     opacity: 1;
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
-/* Special animation for highlight tooltips that preserves positioning */
-@keyframes tooltipBounceInHighlight {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
+/* ============================================
+   TOOLTIP CONTENT
+   ============================================ */
 
-/* Tooltip Content */
 .tutorial-tooltip-content {
-  padding: 24px;
+  padding: 20px 24px 24px;
 }
 
 .tutorial-title {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
   color: var(--color-text-primary, #1f2937);
-  margin: 0 0 12px 0;
-  line-height: 1.3;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
 }
 
 .tutorial-description {
-  font-size: 16px;
+  font-size: 0.875rem;
   color: var(--color-text-secondary, #6b7280);
-  margin: 0 0 20px 0;
-  line-height: 1.5;
+  margin: 0 0 16px 0;
+  line-height: 1.6;
 }
 
-/* Tooltip Arrows */
+/* ============================================
+   TOOLTIP ARROWS
+   ============================================ */
+
 .tutorial-arrow {
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   background: var(--color-bg-primary, #ffffff);
-  border: 2px solid var(--color-accent, #6366f1);
+  border: 1px solid var(--color-border, #e5e7eb);
   z-index: -1;
 }
 
@@ -311,12 +286,15 @@
   border-left: none;
 }
 
-/* Demo Content Styles */
+/* ============================================
+   DEMO CONTENT
+   ============================================ */
+
 .tutorial-demo {
-  margin: 16px 0;
-  padding: 16px;
-  background: var(--color-bg-overlay, #f8fafc);
-  border-radius: 12px;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  background: var(--color-bg-secondary, #f8fafc);
+  border-radius: var(--radius-lg, 8px);
   border: 1px solid var(--color-border, #e5e7eb);
 }
 
@@ -331,11 +309,16 @@
   padding: 8px 12px;
   background: var(--color-bg-primary, #ffffff);
   color: var(--color-text-primary, #1f2937);
-  border: 2px solid var(--color-accent, #6366f1);
-  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-lg, 8px);
   font-family: inherit;
-  font-size: 14px;
-  position: relative;
+  font-size: 0.8125rem;
+  transition: border-color 0.2s ease;
+}
+
+.demo-search-bar:focus-within {
+  border-color: var(--color-accent-0, #309976);
+  box-shadow: 0 0 0 3px rgba(48, 153, 118, 0.12);
 }
 
 .demo-typing {
@@ -343,18 +326,14 @@
 }
 
 .demo-cursor {
-  animation: demoCursorBlink 1s infinite;
-  color: var(--color-accent, #6366f1);
-  font-weight: bold;
+  animation: demoCursorBlink 1s step-end infinite;
+  color: var(--color-accent-0, #309976);
+  font-weight: 500;
 }
 
 @keyframes demoCursorBlink {
-  0%, 50% {
-    opacity: 1;
-  }
-  51%, 100% {
-    opacity: 0;
-  }
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 /* Demo Action Indicators */
@@ -362,40 +341,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  padding: 16px;
   position: relative;
 }
 
 .demo-click-indicator,
-.demo-doubleclick-indicator,
-.demo-hover-indicator,
 .demo-drag-indicator {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--color-accent, #6366f1);
+  color: var(--color-accent-0, #309976);
 }
 
 .demo-click-ripple {
   position: absolute;
-  width: 40px;
-  height: 40px;
-  border: 2px solid var(--color-accent, #6366f1);
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--color-accent-0, #309976);
   border-radius: 50%;
-  animation: demoClickRipple 1.5s ease-out infinite;
-}
-
-.demo-second-click {
-  animation-delay: 0.3s;
+  animation: demoClickRipple 1.8s ease-out infinite;
 }
 
 @keyframes demoClickRipple {
   0% {
     transform: scale(0);
-    opacity: 1;
+    opacity: 0.8;
   }
   100% {
     transform: scale(2);
@@ -403,116 +376,76 @@
   }
 }
 
-.demo-hover-glow {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: demoHoverGlow 2s ease-in-out infinite;
-}
-
-@keyframes demoHoverGlow {
-  0%, 100% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.8;
-  }
-}
-
 .demo-drag-ghost {
-  width: 40px;
-  height: 20px;
-  background: var(--color-accent, #6366f1);
+  width: 36px;
+  height: 18px;
+  background: linear-gradient(135deg, var(--color-accent-0, #309976), var(--color-accent-3, #2dd4bf));
   border-radius: 4px;
-  opacity: 0.8;
-  animation: demoDragMove 2s ease-in-out infinite;
+  opacity: 0.9;
+  animation: demoDragMove 2.5s ease-in-out infinite;
 }
 
 .demo-drag-path {
   position: absolute;
-  width: 60px;
+  width: 50px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--color-accent, #6366f1), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-accent-0, #309976), transparent);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 @keyframes demoDragMove {
-  0%, 100% {
-    transform: translateX(-20px);
-  }
-  50% {
-    transform: translateX(20px);
-  }
+  0%, 100% { transform: translateX(-16px); }
+  50% { transform: translateX(16px); }
 }
 
-/* Progress Indicator */
+/* ============================================
+   PROGRESS INDICATOR
+   ============================================ */
+
 .tutorial-progress {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 16px;
+  right: 16px;
   background: var(--color-bg-primary, #ffffff);
   border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 12px;
-  padding: 12px 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-lg, 8px);
+  padding: 10px 14px;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
   z-index: 10003;
   display: flex;
   align-items: center;
-  gap: 12px;
-  backdrop-filter: blur(8px);
+  gap: 10px;
 }
 
 .tutorial-progress-bar {
-  width: 100px;
-  height: 6px;
+  width: 80px;
+  height: 4px;
   background: var(--color-bg-overlay, #f1f5f9);
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
 }
 
 .tutorial-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6);
-  border-radius: 3px;
-  transition: width 0.3s ease-out;
-  position: relative;
-}
-
-.tutorial-progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: progressShimmer 2s ease-in-out infinite;
-}
-
-@keyframes progressShimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  background: linear-gradient(90deg, var(--color-accent-0, #309976), var(--color-accent-3, #2dd4bf));
+  border-radius: 2px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tutorial-progress-text {
-  font-size: 14px;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-muted, #9ca3af);
   white-space: nowrap;
 }
 
-/* Tutorial Controls */
+/* ============================================
+   CONTROLS PANEL
+   ============================================ */
+
 .tutorial-controls {
   position: fixed;
   bottom: 20px;
@@ -520,35 +453,39 @@
   transform: translateX(-50%);
   background: var(--color-bg-primary, #ffffff);
   border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 16px;
-  padding: 20px 24px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-xl, 12px);
+  padding: 16px 20px;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
   z-index: 10003;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  backdrop-filter: blur(12px);
-  min-width: 280px;
+  gap: 12px;
+  min-width: 260px;
 }
 
 .tutorial-nav-buttons {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
 }
 
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
 .tutorial-btn {
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 16px;
+  padding: 10px 18px;
+  border-radius: var(--radius-lg, 8px);
+  font-size: 0.875rem;
   font-weight: 600;
+  font-family: inherit;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease-out;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   position: relative;
   overflow: hidden;
 }
@@ -559,68 +496,82 @@
 }
 
 .tutorial-btn-primary {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--color-accent-0, #309976), var(--color-accent-2, #1f8a5a));
   color: white;
+  box-shadow: 0 2px 8px rgba(48, 153, 118, 0.3);
+}
+
+.tutorial-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
 }
 
 .tutorial-btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(48, 153, 118, 0.4);
+}
+
+.tutorial-btn-primary:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.tutorial-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .tutorial-btn-secondary {
-  background: var(--color-bg-overlay, #f8fafc);
+  background: var(--color-bg-secondary, #f8fafc);
   color: var(--color-text-secondary, #6b7280);
   border: 1px solid var(--color-border, #e5e7eb);
 }
 
 .tutorial-btn-secondary:hover:not(:disabled) {
   background: var(--color-hover, #f1f5f9);
-  transform: translateY(-1px);
+  border-color: var(--color-border-hover, #9ca3af);
 }
 
 .tutorial-btn-skip {
   background: transparent;
   color: var(--color-text-muted, #9ca3af);
-  font-size: 14px;
-  padding: 8px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 6px 12px;
   align-self: flex-end;
   order: -1;
 }
 
 .tutorial-btn-skip:hover:not(:disabled) {
   color: var(--color-text-secondary, #6b7280);
+  background: var(--color-hover, rgba(0, 0, 0, 0.05));
 }
 
 .tutorial-btn-completion {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, var(--color-accent-0, #309976), var(--color-accent-3, #2dd4bf));
   color: white;
-  font-size: 18px;
-  padding: 16px 32px;
-  animation: completionButtonPulse 2s ease-in-out infinite;
-}
-
-@keyframes completionButtonPulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0.1);
-  }
+  font-size: 0.9375rem;
+  padding: 12px 24px;
+  box-shadow: 0 4px 16px rgba(48, 153, 118, 0.35);
 }
 
 .tutorial-btn-completion:hover:not(:disabled) {
-  transform: scale(1.08) translateY(-2px);
-  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(48, 153, 118, 0.45);
 }
 
-/* Keyboard Hints */
+/* ============================================
+   KEYBOARD HINTS
+   ============================================ */
+
 .tutorial-keyboard-hints {
   display: flex;
-  gap: 16px;
-  font-size: 12px;
+  gap: 12px;
+  font-size: 0.6875rem;
   color: var(--color-text-muted, #9ca3af);
 }
 
@@ -631,65 +582,124 @@
 }
 
 .keyboard-hint kbd {
-  background: var(--color-bg-overlay, #f1f5f9);
-  border: 1px solid var(--color-border, #d1d5db);
+  background: var(--color-bg-secondary, #f8fafc);
+  border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 11px;
-  font-family: monospace;
+  padding: 2px 5px;
+  font-size: 0.625rem;
+  font-family: 'SF Mono', Consolas, monospace;
   color: var(--color-text-secondary, #6b7280);
 }
 
-/* Celebration Animation */
+/* ============================================
+   CELEBRATION / SUCCESS STATE
+   ============================================ */
+
 .tutorial-celebration {
   position: relative;
-  height: 60px;
-  overflow: hidden;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.celebration-success-ring {
+  position: relative;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.celebration-particles {
+.celebration-success-ring::before {
+  content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent-0, #309976), var(--color-accent-3, #2dd4bf));
+  animation: successRingPulse 2s ease-in-out infinite;
 }
 
-.particle {
+.celebration-success-ring::after {
+  content: '';
   position: absolute;
-  font-size: 20px;
-  animation: particleFall 3s ease-out infinite;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--color-bg-primary, #ffffff);
+}
+
+@keyframes successRingPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+}
+
+.celebration-checkmark {
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  color: var(--color-accent-0, #309976);
+  animation: checkmarkPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Subtle confetti dots */
+.celebration-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: confettiFall 2s ease-out infinite;
   opacity: 0;
 }
 
-.particle-1 { left: 10%; animation-delay: 0s; }
-.particle-2 { left: 20%; animation-delay: 0.2s; }
-.particle-3 { left: 30%; animation-delay: 0.4s; }
-.particle-4 { left: 40%; animation-delay: 0.6s; }
-.particle-5 { left: 50%; animation-delay: 0.8s; }
-.particle-6 { left: 60%; animation-delay: 1s; }
-.particle-7 { left: 70%; animation-delay: 1.2s; }
-.particle-8 { left: 80%; animation-delay: 1.4s; }
-.particle-9 { left: 90%; animation-delay: 1.6s; }
-.particle-10 { left: 15%; animation-delay: 1.8s; }
-.particle-11 { left: 35%; animation-delay: 2s; }
-.particle-12 { left: 75%; animation-delay: 2.2s; }
+.confetti-dot:nth-child(1) { left: 15%; background: var(--color-accent-0, #309976); animation-delay: 0s; }
+.confetti-dot:nth-child(2) { left: 30%; background: var(--color-accent-3, #2dd4bf); animation-delay: 0.15s; }
+.confetti-dot:nth-child(3) { left: 45%; background: var(--color-accent-1, #26a269); animation-delay: 0.3s; }
+.confetti-dot:nth-child(4) { left: 60%; background: var(--color-accent-0, #309976); animation-delay: 0.45s; }
+.confetti-dot:nth-child(5) { left: 75%; background: var(--color-accent-3, #2dd4bf); animation-delay: 0.6s; }
+.confetti-dot:nth-child(6) { left: 85%; background: var(--color-accent-2, #1f8a5a); animation-delay: 0.75s; }
 
-@keyframes particleFall {
+@keyframes confettiFall {
   0% {
     opacity: 1;
-    transform: translateY(-20px) rotate(0deg);
+    transform: translateY(-8px) scale(0.8);
   }
   100% {
     opacity: 0;
-    transform: translateY(80px) rotate(360deg);
+    transform: translateY(60px) scale(0.4);
   }
 }
 
-/* Responsive Design */
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
 @media (max-width: 480px) {
   .tutorial-tooltip {
     max-width: 280px;
@@ -698,28 +708,31 @@
   }
   
   .tutorial-tooltip.overlay-style {
-    max-width: 320px;
-    min-width: 280px;
+    max-width: 300px;
+    min-width: 260px;
+    left: 50%;
+    right: auto;
+    width: calc(100% - 32px);
   }
   
   .tutorial-tooltip-content {
-    padding: 20px;
+    padding: 16px 20px 20px;
   }
   
   .tutorial-title {
-    font-size: 18px;
+    font-size: 1rem;
   }
   
   .tutorial-description {
-    font-size: 14px;
+    font-size: 0.8125rem;
   }
   
   .tutorial-controls {
-    min-width: 240px;
-    left: 12px;
-    right: 12px;
+    min-width: 220px;
+    left: 16px;
+    right: 16px;
     transform: none;
-    padding: 16px 20px;
+    padding: 14px 16px;
   }
   
   .tutorial-nav-buttons {
@@ -735,19 +748,22 @@
   .tutorial-progress {
     top: 12px;
     right: 12px;
-    padding: 8px 12px;
+    padding: 8px 10px;
   }
   
   .tutorial-progress-bar {
-    width: 60px;
+    width: 50px;
   }
   
   .tutorial-progress-text {
-    font-size: 12px;
+    font-size: 0.6875rem;
   }
 }
 
-/* Accessibility */
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
 @media (prefers-reduced-motion: reduce) {
   .tutorial-overlay,
   .tutorial-tooltip,
@@ -756,36 +772,57 @@
   .tutorial-btn,
   .demo-cursor,
   .demo-click-ripple,
-  .demo-hover-glow,
   .demo-drag-ghost,
-  .tutorial-progress-fill::after,
-  .particle {
+  .tutorial-progress-fill,
+  .celebration-success-ring,
+  .celebration-checkmark,
+  .confetti-dot {
     animation: none !important;
     transition: none !important;
-  }
-  
-  .tutorial-tooltip {
-    transform: translate(-50%, -50%);
   }
   
   .tutorial-tooltip.overlay-style {
     transform: translate(-50%, -50%);
   }
+  
+  .celebration-success-ring::before {
+    animation: none;
+  }
+  
+  .celebration-checkmark {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-/* High contrast mode support */
+/* High contrast mode */
 @media (prefers-contrast: high) {
   .tutorial-backdrop {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.8);
   }
   
   .tutorial-spotlight {
     box-shadow: 
       0 0 0 4px #ffffff,
-      0 0 0 9999px rgba(0, 0, 0, 0.6);
+      0 0 0 9999px rgba(0, 0, 0, 0.8);
   }
   
   .tutorial-tooltip {
-    border-width: 3px;
+    border: 2px solid var(--color-text-primary, #1f2937);
   }
+  
+  .tutorial-tooltip::before {
+    height: 4px;
+  }
+  
+  .tutorial-btn:focus-visible {
+    outline: 3px solid var(--color-accent-0, #309976);
+    outline-offset: 2px;
+  }
+}
+
+/* Focus visible for keyboard navigation */
+.tutorial-btn:focus-visible {
+  outline: 2px solid var(--color-accent-0, #309976);
+  outline-offset: 2px;
 }

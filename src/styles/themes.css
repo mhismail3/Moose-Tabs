@@ -39,10 +39,10 @@
   --color-hover: rgba(0, 0, 0, 0.1);
   
   /* Drop zone label colors - high contrast */
-  --color-drop-sibling-text: #166534;
-  --color-drop-sibling-bg: rgba(22, 101, 52, 0.15);
-  --color-drop-child-text: #115e59;
-  --color-drop-child-bg: rgba(17, 94, 89, 0.15);
+  --color-drop-sibling-text: #ffffff;
+  --color-drop-sibling-bg: rgba(22, 101, 52, 0.92);
+  --color-drop-child-text: #ffffff;
+  --color-drop-child-bg: rgba(17, 94, 89, 0.92);
 }
 
 /* Dark Theme */
@@ -60,10 +60,10 @@
     --color-hover: rgba(255, 255, 255, 0.1);
     
     /* Drop zone label colors - high contrast for dark mode */
-    --color-drop-sibling-text: #4ade80;
-    --color-drop-sibling-bg: rgba(74, 222, 128, 0.2);
-    --color-drop-child-text: #5eead4;
-    --color-drop-child-bg: rgba(94, 234, 212, 0.2);
+    --color-drop-sibling-text: #ffffff;
+    --color-drop-sibling-bg: rgba(22, 101, 52, 0.95);
+    --color-drop-child-text: #ffffff;
+    --color-drop-child-bg: rgba(17, 94, 89, 0.95);
   }
 }
 
@@ -80,10 +80,10 @@
   --color-border-hover: #9ca3af;
   --color-backdrop: rgba(255, 255, 255, 0.8);
   --color-hover: rgba(0, 0, 0, 0.1);
-  --color-drop-sibling-text: #166534;
-  --color-drop-sibling-bg: rgba(22, 101, 52, 0.15);
-  --color-drop-child-text: #115e59;
-  --color-drop-child-bg: rgba(17, 94, 89, 0.15);
+  --color-drop-sibling-text: #ffffff;
+  --color-drop-sibling-bg: rgba(22, 101, 52, 0.92);
+  --color-drop-child-text: #ffffff;
+  --color-drop-child-bg: rgba(17, 94, 89, 0.92);
 }
 
 .theme-dark {
@@ -98,8 +98,8 @@
   --color-border-hover: rgba(255, 255, 255, 0.2);
   --color-backdrop: rgba(0, 0, 0, 0.8);
   --color-hover: rgba(255, 255, 255, 0.1);
-  --color-drop-sibling-text: #4ade80;
-  --color-drop-sibling-bg: rgba(74, 222, 128, 0.2);
-  --color-drop-child-text: #5eead4;
-  --color-drop-child-bg: rgba(94, 234, 212, 0.2);
+  --color-drop-sibling-text: #ffffff;
+  --color-drop-sibling-bg: rgba(22, 101, 52, 0.95);
+  --color-drop-child-text: #ffffff;
+  --color-drop-child-bg: rgba(17, 94, 89, 0.95);
 }

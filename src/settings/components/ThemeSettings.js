@@ -82,7 +82,7 @@ function ThemeSettings() {
         </div>
 
         {/* Theme Preview */}
-        <div className="setting-item">
+        <div className="setting-item theme-preview-item">
           <div className="setting-info">
             <h4 className="setting-label">Preview</h4>
             <p className="setting-description">
@@ -91,24 +91,58 @@ function ThemeSettings() {
           </div>
           <div className="setting-control">
             <div className="theme-preview">
-              <div className="theme-preview-window">
-                <div className="theme-preview-header">
-                  <div className="theme-preview-controls">
-                    <span className="theme-preview-dot"></span>
-                    <span className="theme-preview-dot"></span>
-                    <span className="theme-preview-dot"></span>
+              <div className="theme-preview-popup">
+                {/* Header */}
+                <div className="theme-preview-popup-header">
+                  <div className="theme-preview-logo">
+                    <span className="theme-preview-logo-icon">🦌</span>
+                    <span className="theme-preview-logo-text">Moose Tabs</span>
                   </div>
-                  <span className="theme-preview-title">Moose Tabs</span>
+                  <button className="theme-preview-sidebar-btn">
+                    <span>◫</span>
+                    <span>Pin to Sidebar</span>
+                  </button>
                 </div>
-                <div className="theme-preview-content">
+                
+                {/* Search bar */}
+                <div className="theme-preview-search">
+                  <div className="theme-preview-search-input">
+                    <span className="theme-preview-search-icon">🔍</span>
+                    <span className="theme-preview-search-placeholder">Search tabs...</span>
+                  </div>
+                </div>
+                
+                {/* Tab list */}
+                <div className="theme-preview-tabs">
                   <div className="theme-preview-tab">
                     <span className="theme-preview-favicon">🌐</span>
-                    <span className="theme-preview-text">Example Tab</span>
+                    <div className="theme-preview-tab-info">
+                      <span className="theme-preview-tab-title">GitHub - Dashboard</span>
+                      <span className="theme-preview-tab-url">github.com</span>
+                    </div>
+                    <span className="theme-preview-tab-close">×</span>
+                  </div>
+                  <div className="theme-preview-tab theme-preview-tab-active">
+                    <span className="theme-preview-favicon">📝</span>
+                    <div className="theme-preview-tab-info">
+                      <span className="theme-preview-tab-title">Google Docs</span>
+                      <span className="theme-preview-tab-url">docs.google.com</span>
+                    </div>
+                    <span className="theme-preview-tab-close">×</span>
                   </div>
                   <div className="theme-preview-tab">
-                    <span className="theme-preview-favicon">📄</span>
-                    <span className="theme-preview-text">Another Tab</span>
+                    <span className="theme-preview-favicon">📺</span>
+                    <div className="theme-preview-tab-info">
+                      <span className="theme-preview-tab-title">YouTube - Watch</span>
+                      <span className="theme-preview-tab-url">youtube.com</span>
+                    </div>
+                    <span className="theme-preview-tab-close">×</span>
                   </div>
+                </div>
+                
+                {/* Footer */}
+                <div className="theme-preview-footer">
+                  <span className="theme-preview-tab-count">3 tabs</span>
                 </div>
               </div>
             </div>

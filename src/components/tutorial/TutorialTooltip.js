@@ -21,15 +21,15 @@ const TutorialTooltip = ({ step, position, isOverlay, targetElement }) => {
               currentText += step.demoText[charIndex];
               setDemoText(currentText);
               charIndex++;
-              setTimeout(typeText, 100);
+              setTimeout(typeText, 80);
             }
           };
           
-          setTimeout(typeText, 1000);
+          setTimeout(typeText, 800);
         }
       };
 
-      const timer = setTimeout(startDemo, 500);
+      const timer = setTimeout(startDemo, 400);
       return () => clearTimeout(timer);
     }
   }, [step, isAnimating]);
@@ -39,7 +39,7 @@ const TutorialTooltip = ({ step, position, isOverlay, targetElement }) => {
     if (step.showDemo && showDemo && step.id === 'search') {
       const timer = setTimeout(() => {
         nextStep();
-      }, 4000); // Auto-advance after demo
+      }, 3500);
       
       return () => clearTimeout(timer);
     }
@@ -60,31 +60,28 @@ const TutorialTooltip = ({ step, position, isOverlay, targetElement }) => {
   const getArrowPosition = () => {
     if (!targetElement || isOverlay) return {};
     
-    const targetRect = targetElement.getBoundingClientRect();
-    const tooltipRect = { width: 320, height: 120 }; // Approximate tooltip size
-    
     switch (step.position) {
       case 'top':
         return {
-          bottom: '-8px',
+          bottom: '-6px',
           left: '50%',
           transform: 'translateX(-50%)'
         };
       case 'bottom':
         return {
-          top: '-8px',
+          top: '-6px',
           left: '50%',
           transform: 'translateX(-50%)'
         };
       case 'left':
         return {
-          right: '-8px',
+          right: '-6px',
           top: '50%',
           transform: 'translateY(-50%)'
         };
       case 'right':
         return {
-          left: '-8px',
+          left: '-6px',
           top: '50%',
           transform: 'translateY(-50%)'
         };
@@ -96,14 +93,29 @@ const TutorialTooltip = ({ step, position, isOverlay, targetElement }) => {
   const arrowDirection = getArrowDirection();
   const arrowStyle = getArrowPosition();
 
+  // Checkmark SVG for completion
+  const CheckmarkIcon = () => (
+    <svg 
+      className="celebration-checkmark" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="3" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+
   return (
     <div 
-      className={`tutorial-tooltip ${isOverlay ? 'overlay-style' : 'highlight-style'} ${step.animation ? `animation-${step.animation}` : ''}`}
+      className={`tutorial-tooltip ${isOverlay ? 'overlay-style' : 'highlight-style'}`}
       style={isOverlay ? {} : { 
         position: 'absolute',
         left: position.x,
         top: position.y,
-        transform: 'none' // Override any CSS transform
+        transform: 'none'
       }}
     >
       {/* Arrow pointer for highlight tooltips */}
@@ -124,7 +136,7 @@ const TutorialTooltip = ({ step, position, isOverlay, targetElement }) => {
           {step.description}
         </p>
 
-        {/* Demo content for search step only */}
+        {/* Demo content for search step */}
         {step.showDemo && showDemo && step.id === 'search' && (
           <div className="tutorial-demo">
             <div className="tutorial-demo-search">
@@ -136,15 +148,19 @@ const TutorialTooltip = ({ step, position, isOverlay, targetElement }) => {
           </div>
         )}
 
-        {/* Completion celebration */}
+        {/* Elegant completion celebration */}
         {step.isCompletion && (
           <div className="tutorial-celebration">
-            <div className="celebration-particles">
-              {[...Array(12)].map((_, i) => (
-                <div key={i} className={`particle particle-${i + 1}`}>
-                  {['🎉', '🎊', '✨', '🌟'][i % 4]}
-                </div>
+            {/* Subtle confetti dots */}
+            <div className="celebration-confetti">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="confetti-dot" />
               ))}
+            </div>
+            
+            {/* Success ring with checkmark */}
+            <div className="celebration-success-ring">
+              <CheckmarkIcon />
             </div>
           </div>
         )}

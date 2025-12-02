@@ -8,7 +8,7 @@ function DisplaySettings() {
     return <div className="settings-loading">Loading...</div>;
   }
 
-  const displayMode = settings.display?.mode || 'sidebar';
+  const displayMode = settings.display?.mode || 'popup';
 
   const handleDisplayModeChange = async (mode) => {
     await updateSingleSetting('display.mode', mode);
@@ -36,22 +36,6 @@ function DisplaySettings() {
           <input
             type="radio"
             name="displayMode"
-            value="sidebar"
-            checked={displayMode === 'sidebar'}
-            onChange={() => handleDisplayModeChange('sidebar')}
-          />
-          <div className="settings-radio-content">
-            <span className="settings-radio-label">Sidebar Panel</span>
-            <span className="settings-radio-description">
-              Opens in Chrome's sidebar panel. Best for extended use and larger tab collections.
-            </span>
-          </div>
-        </label>
-
-        <label className="settings-radio-option">
-          <input
-            type="radio"
-            name="displayMode"
             value="popup"
             checked={displayMode === 'popup'}
             onChange={() => handleDisplayModeChange('popup')}
@@ -60,6 +44,22 @@ function DisplaySettings() {
             <span className="settings-radio-label">Popup Dropdown</span>
             <span className="settings-radio-description">
               Opens as a dropdown from the toolbar. Best for quick access and fewer tabs.
+            </span>
+          </div>
+        </label>
+
+        <label className="settings-radio-option">
+          <input
+            type="radio"
+            name="displayMode"
+            value="sidebar"
+            checked={displayMode === 'sidebar'}
+            onChange={() => handleDisplayModeChange('sidebar')}
+          />
+          <div className="settings-radio-content">
+            <span className="settings-radio-label">Sidebar Panel</span>
+            <span className="settings-radio-description">
+              Opens in Chrome's sidebar panel. Best for extended use and larger tab collections.
             </span>
           </div>
         </label>

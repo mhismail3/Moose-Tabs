@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS = {
   
   // Display settings
   display: {
-    mode: 'sidebar', // 'sidebar', 'popup'
+    mode: 'popup', // 'popup', 'sidebar'
     popupWidth: 400,
     popupHeight: 600,
   },
@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS = {
 
   // AI Integration
   ai: {
-    enabled: false,
+    enabled: true,
     provider: 'openrouter', // 'openrouter', 'openai', 'anthropic', 'gemini', 'groq', 'custom'
     model: 'auto-free', // Uses free models with automatic fallback
     customEndpoint: '',
