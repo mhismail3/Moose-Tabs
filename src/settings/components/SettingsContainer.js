@@ -9,6 +9,7 @@ import TutorialSettings from './TutorialSettings';
 import AccessibilitySettings from './AccessibilitySettings';
 import DataSettings from './DataSettings';
 import AISettings from './AISettings';
+import AIActionsSettings from './AIActionsSettings';
 
 const SETTINGS_SECTIONS = [
   { id: 'theme', title: 'Theme & Appearance', icon: '🎨', component: ThemeSettings },
@@ -17,6 +18,7 @@ const SETTINGS_SECTIONS = [
   { id: 'tabs', title: 'Tab Management', icon: '📑', component: TabManagementSettings },
   { id: 'search', title: 'Search & Filtering', icon: '🔍', component: SearchSettings },
   { id: 'ai', title: 'AI Organization', icon: '🤖', component: AISettings },
+  { id: 'ai-actions', title: 'AI Actions', icon: '✨', component: AIActionsSettings },
   { id: 'tutorial', title: 'Tutorial & Help', icon: '🎓', component: TutorialSettings },
   { id: 'accessibility', title: 'Accessibility', icon: '♿', component: AccessibilitySettings },
   { id: 'data', title: 'Data & Privacy', icon: '💾', component: DataSettings }

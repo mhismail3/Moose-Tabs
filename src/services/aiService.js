@@ -3,7 +3,8 @@
  * Provides abstracted access to various AI providers for tab organization
  */
 
-import { getSettings, getApiKey, AI_PROVIDERS } from '../utils/settings';
+import { getSettings, getApiKey, AI_PROVIDERS, getSuperchargedModel, SUPERCHARGED_PROVIDERS } from '../utils/settings';
+import { extractMultipleTabs, formatExtractedContentForAI, getExtractionSummary } from './contentExtractor';
 
 /**
  * Base error class for AI service errors
@@ -106,6 +107,8 @@ class AIService {
       case 'anthropic':
         headers['x-api-key'] = this.apiKey;
         headers['anthropic-version'] = '2023-06-01';
+        // Extended thinking requires beta header
+        headers['anthropic-beta'] = 'interleaved-thinking-2025-05-14';
         break;
       
       case 'gemini':
@@ -144,9 +147,13 @@ class AIService {
           system: messages.find(m => m.role === 'system')?.content || ''
         };
       
-      case 'gemini':
-        return {
-          contents: messages.map(m => ({
+      case 'gemini': {
+        // Separate system instruction from other messages
+        const systemMessage = messages.find(m => m.role === 'system');
+        const otherMessages = messages.filter(m => m.role !== 'system');
+        
+        const request = {
+          contents: otherMessages.map(m => ({
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }]
           })),
@@ -155,9 +162,44 @@ class AIService {
             temperature
           }
         };
+        
+        // Add system instruction if present
+        if (systemMessage) {
+          request.system_instruction = {
+            parts: [{ text: systemMessage.content }]
+          };
+        }
+        
+        return request;
+      }
+      
+      case 'openai': {
+        // Newer OpenAI models (gpt-5, gpt-4.1, o-series) use max_completion_tokens
+        const useNewTokenParam = this.isNewerOpenAIModel(model);
+        const request = {
+          model,
+          messages,
+          temperature
+        };
+        if (useNewTokenParam) {
+          request.max_completion_tokens = maxTokens;
+        } else {
+          request.max_tokens = maxTokens;
+        }
+        return request;
+      }
+      
+      case 'groq':
+        // Groq uses max_completion_tokens (max_tokens is deprecated)
+        return {
+          model,
+          messages,
+          max_completion_tokens: maxTokens,
+          temperature
+        };
       
       default:
-        // OpenAI-compatible format (OpenRouter, OpenAI, Groq, custom)
+        // OpenAI-compatible format (OpenRouter, custom)
         return {
           model,
           messages,
@@ -165,6 +207,19 @@ class AIService {
           temperature
         };
     }
+  }
+
+  /**
+   * Check if an OpenAI model requires the newer max_completion_tokens parameter
+   */
+  isNewerOpenAIModel(model) {
+    if (!model) return false;
+    const newerModelPrefixes = [
+      'gpt-5', 'gpt-4.1', 'gpt-4.5',
+      'o1', 'o3', 'o4',
+      'chatgpt-4o'
+    ];
+    return newerModelPrefixes.some(prefix => model.startsWith(prefix));
   }
 
   /**
@@ -779,6 +834,644 @@ Output ONLY the JSON:`;
     } catch (error) {
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * Execute AI actions on selected tabs
+   * @param {Array} tabs - Array of tab objects to analyze
+   * @param {Array} prompts - Array of prompt objects with id, name, prompt text
+   * @param {Object} options - Additional options
+   * @returns {Promise<Object>} Result with success status and response
+   */
+  async executeActions(tabs, prompts, options = {}) {
+    // Check availability
+    const availability = await this.isAvailable();
+    if (!availability.available) {
+      return {
+        success: false,
+        error: availability.reason
+      };
+    }
+
+    if (!tabs || tabs.length === 0) {
+      return {
+        success: false,
+        error: 'No tabs selected'
+      };
+    }
+
+    if (!prompts || prompts.length === 0) {
+      return {
+        success: false,
+        error: 'No actions selected'
+      };
+    }
+
+    // Format tab data for the prompt
+    const tabData = tabs.map((tab, idx) => ({
+      index: idx + 1,
+      title: tab.title || 'Untitled',
+      url: tab.url || '',
+      domain: extractDomain(tab.url)
+    }));
+
+    // Build the combined prompt
+    const systemPrompt = this.getActionsSystemPrompt(prompts);
+    const userPrompt = this.getActionsUserPrompt(tabData, prompts);
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ];
+
+    try {
+      console.log(`Executing ${prompts.length} AI action(s) on ${tabs.length} tab(s)`);
+      
+      const response = await this.callAPI(messages, {
+        maxTokens: 2048,
+        temperature: 0.7,
+        timeout: options.timeout || 45000
+      });
+
+      return {
+        success: true,
+        response: response,
+        tabCount: tabs.length,
+        actionCount: prompts.length,
+        actions: prompts.map(p => p.name)
+      };
+    } catch (error) {
+      console.error('AI actions execution failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to execute AI actions'
+      };
+    }
+  }
+
+  /**
+   * Build system prompt for AI actions
+   * @param {Array} prompts - Array of prompt objects
+   * @returns {string} System prompt
+   */
+  getActionsSystemPrompt(prompts) {
+    const isSingleAction = prompts.length === 1;
+    
+    if (isSingleAction) {
+      return `You are a helpful browser tab assistant. You will analyze the user's browser tabs and help them with their request.
+
+Be concise but thorough. Use markdown formatting for better readability:
+- Use **bold** for emphasis
+- Use bullet points for lists
+- Use headers (##) to organize sections if needed
+
+Respond in a helpful, actionable way.`;
+    }
+
+    // Multiple actions - need to combine intelligently
+    return `You are a helpful browser tab assistant. The user has selected multiple analysis tasks to perform on their tabs.
+
+Your job is to address ALL of the following tasks in a single, well-organized response:
+${prompts.map((p, i) => `${i + 1}. ${p.name}: ${p.description || p.prompt.substring(0, 100)}`).join('\n')}
+
+Guidelines:
+- Address each task in a separate section with a clear header
+- Be concise but thorough for each task
+- Use markdown formatting (bold, bullet points, headers)
+- If tasks overlap or have related findings, mention the connections
+- Provide actionable insights where possible`;
+  }
+
+  /**
+   * Build user prompt for AI actions
+   * @param {Array} tabData - Formatted tab data
+   * @param {Array} prompts - Array of prompt objects
+   * @returns {string} User prompt
+   */
+  getActionsUserPrompt(tabData, prompts) {
+    // Format tab list
+    const tabList = tabData.map(t => 
+      `${t.index}. "${t.title}" - ${t.domain} (${t.url})`
+    ).join('\n');
+
+    // Build the action request
+    let actionRequest;
+    if (prompts.length === 1) {
+      actionRequest = prompts[0].prompt;
+    } else {
+      // Multiple prompts - list them all
+      actionRequest = `Please perform the following analyses on my tabs:\n\n${prompts.map((p, i) => 
+        `### Task ${i + 1}: ${p.name}\n${p.prompt}`
+      ).join('\n\n')}`;
+    }
+
+    return `Here are my browser tabs (${tabData.length} total):
+
+${tabList}
+
+---
+
+${actionRequest}`;
+  }
+
+  /**
+   * Get suggested actions based on tabs (for smart suggestions)
+   * @param {Array} tabs - Array of tab objects
+   * @returns {Promise<Object>} Suggested action IDs
+   */
+  async getSuggestedActions(tabs) {
+    // This could be enhanced to analyze tabs and suggest relevant actions
+    // For now, return default suggestions based on tab count
+    const suggestions = [];
+    
+    if (tabs.length > 5) {
+      suggestions.push('suggest-categories', 'find-related');
+    }
+    if (tabs.length > 10) {
+      suggestions.push('cleanup-suggestions', 'find-duplicates');
+    }
+    if (tabs.length > 3) {
+      suggestions.push('summarize', 'task-analysis');
+    }
+    
+    return {
+      success: true,
+      suggestions: [...new Set(suggestions)]
+    };
+  }
+
+  // ============================================================================
+  // SUPERCHARGED MODE METHODS
+  // ============================================================================
+
+  /**
+   * Check if supercharged mode is available
+   * @returns {Promise<Object>} { available, provider, supportsThinking }
+   */
+  async checkSuperchargedAvailable() {
+    await this.ensureInitialized();
+    
+    const provider = this.settings.ai?.provider;
+    
+    if (!SUPERCHARGED_PROVIDERS.includes(provider)) {
+      return { available: false, reason: 'Provider does not support supercharged mode' };
+    }
+    
+    if (!this.apiKey) {
+      return { available: false, reason: 'API key not configured' };
+    }
+    
+    return {
+      available: true,
+      provider,
+      supportsThinking: provider === 'anthropic',
+    };
+  }
+
+  /**
+   * Execute supercharged AI actions with content extraction and thinking
+   * @param {Array} tabs - Array of tab objects
+   * @param {Array} prompts - Array of prompt objects
+   * @param {Object} options - Options
+   * @param {Object} callbacks - Progress callbacks
+   * @returns {Promise<Object>} Results with thinking blocks
+   */
+  async executeSuperchargedActions(tabs, prompts, options = {}, callbacks = {}) {
+    const { onPhase, onProgress, onThinking, onExtractionProgress } = callbacks;
+    
+    // Check availability
+    const availability = await this.checkSuperchargedAvailable();
+    if (!availability.available) {
+      return {
+        success: false,
+        error: availability.reason
+      };
+    }
+
+    if (!tabs || tabs.length === 0) {
+      return { success: false, error: 'No tabs selected' };
+    }
+
+    if (!prompts || prompts.length === 0) {
+      return { success: false, error: 'No actions selected' };
+    }
+
+    const provider = availability.provider;
+    const supportsThinking = availability.supportsThinking;
+    const { model: superchargedModel } = getSuperchargedModel(provider);
+
+    try {
+      // Phase 1: Extract content from tabs
+      if (onPhase) onPhase('extracting');
+      console.log(`[Supercharged] Extracting content from ${tabs.length} tabs...`);
+      
+      const tabIds = tabs.map(t => t.id);
+      const extractedContent = await extractMultipleTabs(tabIds, (current, total, result) => {
+        if (onExtractionProgress) {
+          onExtractionProgress(current, total, result);
+        }
+        if (onProgress) {
+          onProgress(Math.round((current / total) * 30)); // 0-30% for extraction
+        }
+      });
+
+      const extractionSummary = getExtractionSummary(extractedContent);
+      console.log(`[Supercharged] Extraction complete:`, extractionSummary);
+
+      // Format extracted content for AI
+      const formattedContent = formatExtractedContentForAI(extractedContent);
+
+      // Phase 2: Thinking/Analysis
+      if (onPhase) onPhase('thinking');
+      if (onProgress) onProgress(35);
+      
+      // Build supercharged prompts
+      const systemPrompt = this.getSuperchargedSystemPrompt(prompts, supportsThinking);
+      const userPrompt = this.getSuperchargedUserPrompt(formattedContent, prompts, extractionSummary);
+
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ];
+
+      // Phase 3: Generate response
+      if (onPhase) onPhase('generating');
+      if (onProgress) onProgress(50);
+      
+      // Enable web search if there are searchable URLs that failed extraction
+      const enableWebSearch = extractionSummary.hasSearchableUrls || extractionSummary.searchable > 0;
+      
+      console.log(`[Supercharged] Calling ${provider} API with model: ${superchargedModel}, webSearch: ${enableWebSearch}`);
+      
+      // Make the API call with supercharged settings
+      const response = await this.makeSuperchargedRequest(
+        messages, 
+        provider, 
+        superchargedModel,
+        supportsThinking,
+        { ...options, enableWebSearch },
+        (progress) => {
+          if (onProgress) onProgress(50 + Math.round(progress * 0.5)); // 50-100%
+        }
+      );
+
+      if (onProgress) onProgress(100);
+
+      // Parse response and extract thinking blocks
+      const parsedResponse = this.parseSuperchargedResponse(response, provider);
+
+      return {
+        success: true,
+        response: parsedResponse.content,
+        thinking: parsedResponse.thinking,
+        tabCount: tabs.length,
+        actionCount: prompts.length,
+        actions: prompts.map(p => p.name),
+        extractionSummary,
+        supercharged: true,
+        provider,
+        model: superchargedModel,
+      };
+    } catch (error) {
+      console.error('[Supercharged] Execution failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Supercharged execution failed'
+      };
+    }
+  }
+
+  /**
+   * Make API request with supercharged settings
+   */
+  async makeSuperchargedRequest(messages, provider, model, enableThinking, options = {}, onProgress = null) {
+    const timeout = options.timeout || 120000; // 2 minute timeout for supercharged
+    let endpoint = this.getEndpoint();
+    const headers = this.getHeaders(provider);
+    
+    // Build request body based on provider
+    let body;
+    
+    switch (provider) {
+      case 'anthropic':
+        body = {
+          model: model,
+          max_tokens: enableThinking ? 16000 : 8000,
+          messages: messages.filter(m => m.role !== 'system'),
+          system: messages.find(m => m.role === 'system')?.content || '',
+        };
+        
+        // Add extended thinking for supported models
+        if (enableThinking) {
+          body.thinking = {
+            type: 'enabled',
+            budget_tokens: 10000
+          };
+          // Temperature must be 1 for extended thinking
+          body.temperature = 1;
+        } else {
+          body.temperature = 0.7;
+        }
+        endpoint += '/messages';
+        break;
+      
+      case 'openai': {
+        // For GPT-5/5.1, use Responses API with web_search tool when search is needed
+        // This is the official way to enable web search for these models
+        const isGPT5Model = model.startsWith('gpt-5');
+        const useResponsesAPI = options.enableWebSearch && isGPT5Model;
+        
+        if (useResponsesAPI) {
+          // Use Responses API for GPT-5 models with web search
+          body = {
+            model: model,
+            input: messages.map(m => ({
+              role: m.role === 'system' ? 'developer' : m.role,
+              content: m.content,
+            })),
+            tools: [{ type: 'web_search' }],
+            tool_choice: 'auto',
+            max_output_tokens: 8000,
+          };
+          // GPT-5.1 defaults to 'none' reasoning, set to 'low' for better results
+          if (model === 'gpt-5.1') {
+            body.reasoning = { effort: 'low' };
+          }
+          endpoint += '/responses';
+        } else {
+          // Use Chat Completions API for non-GPT-5 models or when search not needed
+          const useNewTokenParam = this.isNewerOpenAIModel(model);
+          body = {
+            model: model,
+            messages: messages,
+            temperature: 0.7,
+          };
+          if (useNewTokenParam) {
+            body.max_completion_tokens = 8000;
+          } else {
+            body.max_tokens = 8000;
+          }
+          endpoint += '/chat/completions';
+        }
+        break;
+      }
+      
+      case 'gemini': {
+        // Check if model supports thinking (Gemini 2.5+)
+        const supportsGeminiThinking = model.includes('gemini-2.5') || model.includes('gemini-3');
+        
+        // Separate system instruction from other messages
+        const systemMessage = messages.find(m => m.role === 'system');
+        const otherMessages = messages.filter(m => m.role !== 'system');
+        
+        body = {
+          contents: otherMessages.map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+          })),
+          generationConfig: {
+            maxOutputTokens: 8000,
+            temperature: 0.7,
+          }
+        };
+        
+        // Add system instruction if present
+        if (systemMessage) {
+          body.system_instruction = {
+            parts: [{ text: systemMessage.content }]
+          };
+        }
+        
+        // Add thinking config for models that support it
+        if (supportsGeminiThinking) {
+          body.generationConfig.thinkingConfig = {
+            thinkingBudget: 8000 // Allow model to think
+          };
+        }
+        endpoint += `/models/${model}:generateContent?key=${this.apiKey}`;
+        break;
+      }
+      
+      default:
+        throw new AIServiceError(`Unsupported provider for supercharged mode: ${provider}`, 'UNSUPPORTED_PROVIDER');
+    }
+
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      console.log(`[Supercharged] Making request to ${provider}...`);
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = this.parseErrorMessage(response.status, errorData, provider);
+        throw new AIServiceError(errorMessage, 'API_ERROR', { status: response.status, errorData });
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      if (error instanceof AIServiceError) {
+        throw error;
+      }
+      
+      if (error.name === 'AbortError') {
+        throw new AIServiceError(
+          'Supercharged request timed out. Try with fewer tabs.',
+          'TIMEOUT'
+        );
+      }
+      
+      throw new AIServiceError(
+        error.message || 'Failed to make supercharged request',
+        'REQUEST_FAILED',
+        { error }
+      );
+    }
+  }
+
+  /**
+   * Parse supercharged response and extract thinking blocks
+   */
+  parseSuperchargedResponse(response, provider) {
+    const result = {
+      content: '',
+      thinking: [],
+    };
+
+    switch (provider) {
+      case 'anthropic':
+        // Anthropic returns content array with possible thinking blocks
+        if (response.content && Array.isArray(response.content)) {
+          for (const block of response.content) {
+            if (block.type === 'thinking') {
+              result.thinking.push({
+                type: 'thinking',
+                content: block.thinking,
+              });
+            } else if (block.type === 'text') {
+              result.content += block.text;
+            }
+          }
+        }
+        break;
+      
+      case 'openai':
+        // Handle both Responses API and Chat Completions API formats
+        if (response.output_text) {
+          // Responses API format
+          result.content = response.output_text;
+          // Check for web search results in output
+          if (response.output && Array.isArray(response.output)) {
+            for (const item of response.output) {
+              if (item.type === 'web_search_call') {
+                result.thinking.push({
+                  type: 'web_search',
+                  content: `Web search performed: ${item.status || 'completed'}`,
+                });
+              }
+            }
+          }
+        } else if (response.output && Array.isArray(response.output)) {
+          // Responses API with output array
+          for (const item of response.output) {
+            if (item.type === 'message' && item.content) {
+              for (const content of item.content) {
+                if (content.type === 'output_text') {
+                  result.content += content.text || '';
+                }
+              }
+            }
+          }
+        } else {
+          // Chat Completions API format
+          result.content = response.choices?.[0]?.message?.content || '';
+        }
+        break;
+      
+      case 'gemini':
+        // Gemini may return multiple parts including thinking
+        if (response.candidates?.[0]?.content?.parts) {
+          for (const part of response.candidates[0].content.parts) {
+            if (part.thought) {
+              // Gemini thinking block
+              result.thinking.push({
+                type: 'thinking',
+                content: part.thought,
+              });
+            } else if (part.text) {
+              result.content += part.text;
+            }
+          }
+        }
+        break;
+      
+      default:
+        result.content = JSON.stringify(response);
+    }
+
+    return result;
+  }
+
+  /**
+   * Get system prompt for supercharged mode
+   */
+  getSuperchargedSystemPrompt(prompts, supportsThinking) {
+    const taskList = prompts.map((p, i) => `${i + 1}. ${p.name}: ${p.description || ''}`).join('\n');
+    
+    const thinkingInstructions = supportsThinking 
+      ? `\n\nYou have extended thinking capabilities. Use them to:
+- Carefully analyze the content of each page
+- Find patterns and connections across tabs
+- Reason through complex relationships
+- Provide well-thought-out, comprehensive insights`
+      : '';
+
+    return `You are an advanced AI assistant with FULL ACCESS to browser tab content and WEB SEARCH capabilities.
+
+You are analyzing tabs in SUPERCHARGED MODE, meaning you have:
+- Complete page text content (when extraction succeeded)
+- Page metadata (descriptions, authors, etc.)
+- Headings structure for understanding page organization
+- Images found on each page
+- Links from each page
+- WEB SEARCH capability for URLs where content extraction failed
+
+Your tasks:
+${taskList}
+
+CRITICAL - HANDLING DIFFERENT TAB STATUSES:
+1. **CONTENT EXTRACTED SUCCESSFULLY**: Analyze the provided content directly.
+2. **EXTRACTION FAILED - WEB SEARCH RECOMMENDED**: 
+   - These are valid web URLs where I couldn't extract content
+   - YOU MUST use your web search capability to look up these URLs
+   - Search the URL directly and include that information in your analysis
+   - Do NOT skip these tabs - they may contain the most important information
+3. **BROWSER INTERNAL PAGE**: Chrome/browser settings pages - note them but skip analysis.
+4. **RESTRICTED PAGE**: Local files or special URLs - skip these.
+
+INSTRUCTIONS:
+1. Provide DETAILED, COMPREHENSIVE analysis based on page content AND web search results
+2. For tabs marked "WEB SEARCH RECOMMENDED", search the URL and report what you find
+3. Include specific quotes, data points, and facts from the pages
+4. Reference images when relevant (describe what they show)
+5. Cite sources with [Page Title](URL) format
+6. Organize your response with clear ## headers for each task
+7. Use markdown formatting extensively:
+   - **Bold** for key findings
+   - Bullet points for lists
+   - > Blockquotes for important quotes from pages
+   - Links for all citations
+8. Be thorough but well-organized - quality over brevity${thinkingInstructions}
+
+Remember: You have web search capabilities. If content extraction failed for a URL, SEARCH IT and include the results. Do not leave gaps in your analysis.`;
+  }
+
+  /**
+   * Get user prompt for supercharged mode
+   */
+  getSuperchargedUserPrompt(formattedContent, prompts, extractionSummary) {
+    const summaryText = `Content extraction summary:
+- Total tabs: ${extractionSummary.total}
+- Successfully extracted: ${extractionSummary.successful}
+- Need web search: ${extractionSummary.searchable || 0} (valid URLs where extraction failed - PLEASE SEARCH THESE)
+- Browser internal pages: ${extractionSummary.browserInternal || 0} (skip these)
+- Other restricted: ${extractionSummary.restricted - (extractionSummary.browserInternal || 0)}`;
+
+    const searchReminder = extractionSummary.searchable > 0 || extractionSummary.hasSearchableUrls
+      ? `\n\n⚠️ IMPORTANT: ${extractionSummary.searchable || 'Some'} tabs are marked "WEB SEARCH RECOMMENDED". 
+Please use your web search capabilities to look up those URLs directly and include that information in your analysis. Do NOT skip these tabs!`
+      : '';
+
+    const taskInstructions = prompts.length === 1
+      ? prompts[0].prompt
+      : `Please perform ALL of the following analyses:\n\n${prompts.map((p, i) => 
+          `### Task ${i + 1}: ${p.name}\n${p.prompt}`
+        ).join('\n\n')}`;
+
+    return `${summaryText}${searchReminder}
+
+Here is the complete content from my browser tabs:
+
+${formattedContent}
+
+---
+
+${taskInstructions}
+
+Please provide a comprehensive, detailed analysis. For any tabs where extraction failed but a URL is provided, use web search to look up that URL and include the information. Cite sources and organize your response clearly.`;
   }
 }
 

@@ -12,7 +12,9 @@
     "tabGroups",
     "sidePanel",
     "storage",
-    "contextMenus"
+    "contextMenus",
+    "scripting",
+    "activeTab"
   ],
   "side_panel": {
     "default_path": "index.html"

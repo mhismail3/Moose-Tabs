@@ -226,6 +226,13 @@
   font-size: 1rem;
 }
 
+.popup-container .ai-actions-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
 .popup-container .tab-tree-content {
   flex: 1 1 auto;
   min-height: 0;
