@@ -65,13 +65,17 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null,
   }, [tabIndexMap]);
 
   // Get all descendant tab IDs from local hierarchy data (synchronous)
+  // Uses depth-first traversal to maintain hierarchy order
+  // CRITICAL: This order is preserved when moving tabs - DO NOT SORT BY INDEX
   const getDescendantIds = useCallback((parentTab) => {
     const ids = [];
     const traverse = (t) => {
-      if (t.children) {
+      if (t.children && Array.isArray(t.children)) {
         for (const child of t.children) {
-          ids.push(child.id);
-          traverse(child);
+          if (child && typeof child.id === 'number') {
+            ids.push(child.id);
+            traverse(child);
+          }
         }
       }
     };
@@ -79,20 +83,19 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null,
     return ids;
   }, []);
 
-  // Check circular dependency using local data (synchronous)
-  const wouldCreateCircularDependency = useCallback((draggedTabId, targetTabId) => {
-    if (draggedTabId === targetTabId) return true;
-    
-    // Check if target is a descendant of the dragged tab
-    const descendantIds = getDescendantIds(tab);
-    return descendantIds.includes(targetTabId);
-  }, [tab, getDescendantIds]);
-
-  // Find a tab in the local hierarchy
+  // Find a tab in the local hierarchy - searches through tree structure
+  // Note: allTabsInWindow is flattened but each tab still has its children property
   const findTabInHierarchy = useCallback((tabList, searchId) => {
+    if (!tabList || !Array.isArray(tabList)) return null;
+    
     for (const t of tabList) {
-      if (t.id === searchId) return t;
-      if (t.children) {
+      if (!t) continue;
+      if (t.id === searchId) {
+        // Found it - return the tab with its children intact
+        return t;
+      }
+      // Also search in children (in case we're given a hierarchical list)
+      if (t.children && Array.isArray(t.children) && t.children.length > 0) {
         const found = findTabInHierarchy(t.children, searchId);
         if (found) return found;
       }
@@ -100,112 +103,81 @@ export function useDragDrop(tab, hasChildren, onTabMove, allTabsInWindow = null,
     return null;
   }, []);
 
-  // Calculate target index for sibling drop (after target and all its descendants)
-  const calculateSiblingIndex = useCallback((targetTab) => {
-    const targetInfo = tabIndexMap.get(targetTab.id);
-    if (!targetInfo) return 0;
+  // Check circular dependency using local data (synchronous)
+  // Must find the DRAGGED tab in the hierarchy to get its descendants
+  const wouldCreateCircularDependency = useCallback((draggedTabId, targetTabId) => {
+    if (draggedTabId === targetTabId) return true;
     
-    let maxIndex = targetInfo.index;
+    // Find the dragged tab in the full hierarchy to get its descendants
+    const draggedTab = findTabInHierarchy(allTabsInWindow || [], draggedTabId);
+    if (!draggedTab) return false;
     
-    // Find max index among target's descendants using local hierarchy
-    const descendants = getDescendantIds(targetTab);
-    for (const descId of descendants) {
-      const descInfo = tabIndexMap.get(descId);
-      if (descInfo && descInfo.index > maxIndex) {
-        maxIndex = descInfo.index;
-      }
+    // Check if target is a descendant of the dragged tab
+    const descendantIds = getDescendantIds(draggedTab);
+    return descendantIds.includes(targetTabId);
+  }, [allTabsInWindow, findTabInHierarchy, getDescendantIds]);
+
+  // Robust tab move handler - sends to background for atomic operation with fresh Chrome data
+  // Key principle: The hierarchy order from descendantIds is the SOURCE OF TRUTH
+  const handleTabMove = useCallback((draggedTabId, targetTab, position = 'sibling') => {
+    // Validate inputs
+    if (!draggedTabId || !targetTab || !targetTab.id) {
+      console.error('Invalid move parameters:', { draggedTabId, targetTab });
+      return;
     }
     
-    return maxIndex + 1;
-  }, [tabIndexMap, getDescendantIds]);
-
-  // Optimized tab move handler
-  const handleTabMove = useCallback(async (draggedTabId, targetTab, position = 'sibling') => {
     if (wouldCreateCircularDependency(draggedTabId, targetTab.id)) {
       console.log('Prevented circular dependency');
       return;
     }
 
+    // Get descendant IDs from local hierarchy
+    // CRITICAL: This must use hierarchy order (depth-first), NOT Chrome index order
+    // The background script will preserve this order when moving tabs
+    const draggedWithHierarchy = findTabInHierarchy(allTabsInWindow || [], draggedTabId) || 
+                                  { id: draggedTabId, children: [] };
+    const descendantIds = getDescendantIds(draggedWithHierarchy);
+    
+    // DEBUG: Log complete information about the move
+    console.log('========== FRONTEND MOVE REQUEST ==========');
+    console.log('Dragged tab:', draggedTabId);
+    console.log('Dragged tab found in hierarchy:', draggedWithHierarchy ? 'YES' : 'NO');
+    if (draggedWithHierarchy) {
+      console.log('Dragged tab children:', draggedWithHierarchy.children?.map(c => c.id));
+    }
+    console.log('Target tab:', targetTab.id, 'at index', targetTab.index);
+    console.log('Position:', position);
+    console.log('Descendant IDs (hierarchy order):', descendantIds);
+    console.log('===========================================');
+
+    // Send to background for atomic move operation
+    // Background will use fresh Chrome data for index calculations
+    // but will preserve the hierarchy order we send
+    chrome.runtime.sendMessage({
+      action: 'moveTabsWithHierarchy',
+      draggedTabId,
+      targetTabId: targetTab.id,
+      position,
+      descendantIds
+    }).catch(err => console.error('Move message failed:', err));
+
+    // Trigger animations immediately (non-blocking)
     const draggedInfo = tabIndexMap.get(draggedTabId);
     const targetInfo = tabIndexMap.get(targetTab.id);
+    const isMovingDown = (draggedInfo?.index || 0) < (targetInfo?.index || 0);
+    const direction = isMovingDown ? 'down' : 'up';
     
-    if (!draggedInfo || !targetInfo) {
-      console.error('Tab info not found in local data');
-      return;
-    }
+    const tabIdsToAnimate = [draggedTabId, ...descendantIds];
+    requestAnimationFrame(() => {
+      startAnimation(tabIdsToAnimate, direction);
+    });
 
-    try {
-      // Get all tabs to move (dragged + descendants) from local hierarchy
-      // First find the dragged tab in the hierarchy to get its children
-      const draggedWithHierarchy = findTabInHierarchy([tab], draggedTabId) || 
-                                    { id: draggedTabId, children: [] };
-      
-      const tabIdsToMove = [draggedTabId, ...getDescendantIds(draggedWithHierarchy)];
-      
-      // Calculate target index
-      let targetIndex;
-      let newParentId = null;
-
-      if (position === 'child') {
-        targetIndex = targetInfo.index + 1;
-        newParentId = targetTab.id;
-      } else {
-        targetIndex = calculateSiblingIndex(targetTab);
-        newParentId = targetTab.parentId ?? null;
-      }
-
-      // Determine move direction
-      const currentIndex = draggedInfo.index;
-      const isMovingDown = currentIndex < targetIndex;
-
-      // Adjust target index for Chrome's move behavior
-      if (isMovingDown) {
-        // When moving down, account for indices shifting when tabs are removed
-        const tabsBeingMovedBeforeTarget = tabIdsToMove.filter(id => {
-          const info = tabIndexMap.get(id);
-          return info && info.index < targetIndex;
-        }).length;
-        targetIndex = targetIndex - tabsBeingMovedBeforeTarget;
-      }
-
-      // BATCH MOVE: Move all tabs at once using Chrome's array support
-      // This is MUCH faster than sequential moves
-      if (tabIdsToMove.length === 1) {
-        await chrome.tabs.move(tabIdsToMove[0], { 
-          index: targetIndex, 
-          windowId: targetInfo.windowId 
-        });
-      } else {
-        // Chrome.tabs.move supports array of tab IDs - moves them in order
-        await chrome.tabs.move(tabIdsToMove, { 
-          index: targetIndex, 
-          windowId: targetInfo.windowId 
-        });
-      }
-
-      // Update hierarchy relationship (single message)
-      chrome.runtime.sendMessage({
-        action: 'updateParentRelationship',
-        tabId: draggedTabId,
-        parentId: newParentId
-      }).catch(err => console.log('Parent update message failed:', err));
-
-      // Trigger animations (non-blocking)
-      const direction = isMovingDown ? 'down' : 'up';
-      requestAnimationFrame(() => {
-        startAnimation(tabIdsToMove, direction);
-      });
-
-    } catch (error) {
-      console.error('Tab move failed:', error);
-    }
   }, [
     wouldCreateCircularDependency, 
     tabIndexMap, 
-    tab,
+    allTabsInWindow,
     findTabInHierarchy,
     getDescendantIds, 
-    calculateSiblingIndex,
     startAnimation
   ]);
 

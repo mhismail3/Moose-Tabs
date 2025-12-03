@@ -1061,8 +1061,9 @@ ${actionRequest}`;
     const { model: superchargedModel } = getSuperchargedModel(provider);
 
     try {
-      // Phase 1: Extract content from tabs
+      // Phase 1: Extract content from tabs (0-25%)
       if (onPhase) onPhase('extracting');
+      if (onProgress) onProgress(0);
       console.log(`[Supercharged] Extracting content from ${tabs.length} tabs...`);
       
       const tabIds = tabs.map(t => t.id);
@@ -1071,7 +1072,7 @@ ${actionRequest}`;
           onExtractionProgress(current, total, result);
         }
         if (onProgress) {
-          onProgress(Math.round((current / total) * 30)); // 0-30% for extraction
+          onProgress(Math.round((current / total) * 25)); // 0-25% for extraction
         }
       });
 
@@ -1081,9 +1082,9 @@ ${actionRequest}`;
       // Format extracted content for AI
       const formattedContent = formatExtractedContentForAI(extractedContent);
 
-      // Phase 2: Thinking/Analysis
+      // Phase 2: Thinking/Analysis - the main AI processing phase (25-90%)
       if (onPhase) onPhase('thinking');
-      if (onProgress) onProgress(35);
+      if (onProgress) onProgress(28);
       
       // Build supercharged prompts
       const systemPrompt = this.getSuperchargedSystemPrompt(prompts, supportsThinking);
@@ -1094,28 +1095,31 @@ ${actionRequest}`;
         { role: 'user', content: userPrompt }
       ];
 
-      // Phase 3: Generate response
-      if (onPhase) onPhase('generating');
-      if (onProgress) onProgress(50);
-      
       // Enable web search if there are searchable URLs that failed extraction
       const enableWebSearch = extractionSummary.hasSearchableUrls || extractionSummary.searchable > 0;
       
       console.log(`[Supercharged] Calling ${provider} API with model: ${superchargedModel}, webSearch: ${enableWebSearch}`);
       
       // Make the API call with supercharged settings
+      // Progress callbacks will update during the request
       const response = await this.makeSuperchargedRequest(
         messages, 
         provider, 
         superchargedModel,
         supportsThinking,
         { ...options, enableWebSearch },
-        (progress) => {
-          if (onProgress) onProgress(50 + Math.round(progress * 0.5)); // 50-100%
+        {
+          onProgress: (progress) => {
+            // 30-85% for API call (thinking phase)
+            if (onProgress) onProgress(30 + Math.round(progress * 0.55));
+          },
+          onPhase: onPhase
         }
       );
 
-      if (onProgress) onProgress(100);
+      // Phase 3: Generate/Format response (90-100%)
+      if (onPhase) onPhase('generating');
+      if (onProgress) onProgress(90);
 
       // Parse response and extract thinking blocks
       const parsedResponse = this.parseSuperchargedResponse(response, provider);
@@ -1144,10 +1148,15 @@ ${actionRequest}`;
   /**
    * Make API request with supercharged settings
    */
-  async makeSuperchargedRequest(messages, provider, model, enableThinking, options = {}, onProgress = null) {
+  async makeSuperchargedRequest(messages, provider, model, enableThinking, options = {}, callbacks = {}) {
     const timeout = options.timeout || 120000; // 2 minute timeout for supercharged
     let endpoint = this.getEndpoint();
     const headers = this.getHeaders(provider);
+    
+    // Handle both old (function) and new (object) callback format
+    const { onProgress, onPhase } = typeof callbacks === 'function' 
+      ? { onProgress: callbacks, onPhase: null }
+      : callbacks;
     
     // Build request body based on provider
     let body;
@@ -1260,8 +1269,41 @@ ${actionRequest}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+    // Simulate progress during API call to give user feedback
+    let simulatedProgress = 0;
+    let progressInterval = null;
+    
+    const startProgressSimulation = () => {
+      if (!onProgress) return;
+      
+      // Start with quick progress, then slow down
+      // This gives responsive feedback while waiting for API
+      progressInterval = setInterval(() => {
+        if (simulatedProgress < 30) {
+          simulatedProgress += 3; // Quick start
+        } else if (simulatedProgress < 60) {
+          simulatedProgress += 2; // Medium pace
+        } else if (simulatedProgress < 85) {
+          simulatedProgress += 0.5; // Slow down
+        }
+        // Cap at 90% - final 10% happens when response arrives
+        simulatedProgress = Math.min(simulatedProgress, 90);
+        onProgress(simulatedProgress);
+      }, 500);
+    };
+    
+    const stopProgressSimulation = () => {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+    };
+
     try {
       console.log(`[Supercharged] Making request to ${provider}...`);
+      
+      // Start progress simulation
+      startProgressSimulation();
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -1269,6 +1311,10 @@ ${actionRequest}`;
         body: JSON.stringify(body),
         signal: controller.signal
       });
+
+      // Stop simulation and jump to 95%
+      stopProgressSimulation();
+      if (onProgress) onProgress(95);
 
       clearTimeout(timeoutId);
 
@@ -1279,8 +1325,13 @@ ${actionRequest}`;
       }
 
       const data = await response.json();
+      
+      // Complete!
+      if (onProgress) onProgress(100);
+      
       return data;
     } catch (error) {
+      stopProgressSimulation();
       clearTimeout(timeoutId);
       
       if (error instanceof AIServiceError) {

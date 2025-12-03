@@ -478,9 +478,13 @@ function AIActionsPanel({ tabs, onClose }) {
             {isLoading && (
               <div className="ai-actions-loading">
                 {/* Supercharged Progress Display */}
-                {superchargedEnabled && currentPhase && (
+                {superchargedEnabled && (
                   <div className="supercharged-progress">
-                    <div className={`progress-phase ${currentPhase === 'extracting' ? 'active' : progress > 30 ? 'done' : ''}`}>
+                    {/* Phase 1: Extracting - done when progress > 25% */}
+                    <div className={`progress-phase ${
+                      currentPhase === 'extracting' ? 'active' : 
+                      progress > 25 ? 'done' : 'pending'
+                    }`}>
                       <span className="phase-icon">📄</span>
                       <span className="phase-label">Fetching page content</span>
                       {currentPhase === 'extracting' && extractionStatus && (
@@ -488,20 +492,50 @@ function AIActionsPanel({ tabs, onClose }) {
                           {extractionStatus.current}/{extractionStatus.total}
                         </span>
                       )}
-                      {progress > 30 && <span className="phase-check">✓</span>}
+                      {currentPhase === 'extracting' && !extractionStatus && (
+                        <span className="phase-spinner"></span>
+                      )}
+                      {progress > 25 && <span className="phase-check">✓</span>}
                     </div>
-                    <div className={`progress-phase ${currentPhase === 'thinking' ? 'active' : progress > 50 ? 'done' : ''}`}>
+                    
+                    {/* Phase 2: Thinking/Analyzing - active during API call (25-90%) */}
+                    <div className={`progress-phase ${
+                      currentPhase === 'thinking' ? 'active' : 
+                      progress > 85 ? 'done' : 'pending'
+                    }`}>
                       <span className="phase-icon">🧠</span>
                       <span className="phase-label">Analyzing & reasoning</span>
-                      {progress > 50 && <span className="phase-check">✓</span>}
+                      {currentPhase === 'thinking' && (
+                        <span className="phase-spinner"></span>
+                      )}
+                      {progress > 85 && <span className="phase-check">✓</span>}
                     </div>
-                    <div className={`progress-phase ${currentPhase === 'generating' ? 'active' : progress >= 100 ? 'done' : ''}`}>
+                    
+                    {/* Phase 3: Generating/Formatting results (90-100%) */}
+                    <div className={`progress-phase ${
+                      currentPhase === 'generating' ? 'active' : 
+                      progress >= 100 ? 'done' : 'pending'
+                    }`}>
                       <span className="phase-icon">✨</span>
                       <span className="phase-label">Generating results</span>
+                      {currentPhase === 'generating' && (
+                        <span className="phase-spinner"></span>
+                      )}
                       {progress >= 100 && <span className="phase-check">✓</span>}
                     </div>
+                    
                     <div className="progress-bar-container">
-                      <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+                      <div 
+                        className="progress-bar" 
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    
+                    {/* Status message */}
+                    <div className="progress-status">
+                      {currentPhase === 'extracting' && 'Reading page content...'}
+                      {currentPhase === 'thinking' && 'AI is analyzing your tabs...'}
+                      {currentPhase === 'generating' && 'Preparing results...'}
                     </div>
                   </div>
                 )}
@@ -919,4 +953,5 @@ function ResultsRenderer({ content, isSupercharged = false }) {
 }
 
 export default AIActionsPanel;
+
 

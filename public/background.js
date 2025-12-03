@@ -21,6 +21,9 @@ let parityChecker = null;
 let isInitialized = false;
 let initializationPromise = null;
 
+// Flag to skip onMoved broadcasts during programmatic moves
+let skipOnMovedBroadcast = false;
+
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
@@ -270,6 +273,21 @@ function broadcastHierarchyUpdate() {
   if (sidebarPorts.size === 0) return;
 
   const hierarchy = tabHierarchy.getHierarchy(null);
+  
+  // DEBUG: Log hierarchy being broadcast
+  console.log('========== BROADCASTING HIERARCHY ==========');
+  const logHierarchy = (tabs, depth = 0) => {
+    for (const tab of tabs) {
+      const indent = '  '.repeat(depth);
+      console.log(`${indent}[${tab.index}] id=${tab.id} "${tab.title?.substring(0, 25)}"`);
+      if (tab.children && tab.children.length > 0) {
+        logHierarchy(tab.children, depth + 1);
+      }
+    }
+  };
+  logHierarchy(hierarchy);
+  console.log('============================================');
+  
   const message = {
     type: 'hierarchyUpdated',
     hierarchy,
@@ -396,6 +414,221 @@ async function handleMessage(request, sender) {
       return { success: true };
     }
 
+    case 'moveTabsWithHierarchy': {
+      // ROBUST move operation that maintains 1:1 parity between sidebar and tab bar
+      // Key principle: Use the BACKEND's hierarchy as source of truth, not frontend's
+      const { draggedTabId, targetTabId, position } = request;
+      
+      console.log('========== MOVE OPERATION START ==========');
+      console.log('Dragged:', draggedTabId, 'Target:', targetTabId, 'Position:', position);
+      
+      try {
+        skipOnMovedBroadcast = true;
+        
+        // === STEP 1: Get current Chrome state ===
+        let draggedTab, targetTab;
+        try {
+          [draggedTab, targetTab] = await Promise.all([
+            chrome.tabs.get(draggedTabId),
+            chrome.tabs.get(targetTabId)
+          ]);
+        } catch (e) {
+          console.error('Tab no longer exists:', e);
+          skipOnMovedBroadcast = false;
+          return { success: false, error: 'Tab no longer exists' };
+        }
+        
+        const windowId = targetTab.windowId;
+        const allTabsInWindow = await chrome.tabs.query({ windowId });
+        allTabsInWindow.sort((a, b) => a.index - b.index);
+        
+        console.log('BEFORE move - Chrome tab order:');
+        allTabsInWindow.forEach(t => console.log(`  [${t.index}] id=${t.id} "${t.title?.substring(0, 30)}"`));
+        
+        const indexMap = new Map(allTabsInWindow.map(t => [t.id, t.index]));
+        
+        // === STEP 2: Get descendants from BACKEND hierarchy ===
+        // Use hierarchy's children order (which matches sidebar display order)
+        const getDescendantsInHierarchyOrder = (tabId) => {
+          const result = [];
+          const t = tabHierarchy.tabs.get(tabId);
+          if (t && t.children && t.children.length > 0) {
+            // Children array should already be sorted by index from sortAllChildrenByBrowserIndex
+            for (const childId of t.children) {
+              if (indexMap.has(childId)) {
+                result.push(childId);
+                result.push(...getDescendantsInHierarchyOrder(childId));
+              }
+            }
+          }
+          return result;
+        };
+        
+        const descendantIds = getDescendantsInHierarchyOrder(draggedTabId);
+        const tabIdsToMove = [draggedTabId, ...descendantIds];
+        
+        // Log the hierarchy's children order for debugging
+        const draggedHierarchyTab = tabHierarchy.tabs.get(draggedTabId);
+        if (draggedHierarchyTab) {
+          console.log('Hierarchy children order:', draggedHierarchyTab.children);
+          console.log('Children indices:', draggedHierarchyTab.children.map(id => indexMap.get(id)));
+        }
+        
+        console.log('Tabs to move (parent + descendants sorted by index):', tabIdsToMove);
+        console.log('Their current indices:', tabIdsToMove.map(id => indexMap.get(id)));
+        
+        if (tabIdsToMove.length === 0) {
+          console.error('No valid tabs to move');
+          skipOnMovedBroadcast = false;
+          return { success: false, error: 'No valid tabs to move' };
+        }
+        
+        // === STEP 3: Find where to insert (after target's subtree) ===
+        const targetIndex = indexMap.get(targetTabId);
+        if (targetIndex === undefined) {
+          console.error('Target tab has no index');
+          skipOnMovedBroadcast = false;
+          return { success: false, error: 'Target position unknown' };
+        }
+        
+        // Get target's descendants to find the end of its subtree
+        const targetDescendants = getDescendantsInHierarchyOrder(targetTabId);
+        let insertAfterIndex = targetIndex;
+        for (const descId of targetDescendants) {
+          const descIndex = indexMap.get(descId);
+          if (descIndex !== undefined && descIndex > insertAfterIndex) {
+            insertAfterIndex = descIndex;
+          }
+        }
+        
+        console.log(`Target at ${targetIndex}, subtree ends at ${insertAfterIndex}`);
+        
+        // === STEP 4: Determine move direction ===
+        const tabsAtOrBeforeTarget = tabIdsToMove.filter(id => {
+          const idx = indexMap.get(id);
+          return idx !== undefined && idx <= insertAfterIndex;
+        }).length;
+        
+        const isMovingDown = tabsAtOrBeforeTarget > 0;
+        
+        // Handle pinned tabs - can't move unpinned tabs before pinned ones
+        const pinnedCount = allTabsInWindow.filter(t => t.pinned).length;
+        let finalInsertAfter = insertAfterIndex;
+        if (!draggedTab.pinned && insertAfterIndex < pinnedCount - 1) {
+          finalInsertAfter = pinnedCount - 1;
+        }
+        
+        console.log(`Insert after index: ${finalInsertAfter}, moving ${isMovingDown ? 'DOWN' : 'UP'}`);
+        
+        // === STEP 5: Determine new parent ===
+        let newParentId = null;
+        if (position === 'child') {
+          newParentId = targetTabId;
+        } else {
+          const targetHierarchyTab = tabHierarchy.getTab(targetTabId);
+          newParentId = targetHierarchyTab?.parentId ?? null;
+        }
+        
+        console.log('New parent:', newParentId);
+        
+        // === STEP 6: Execute the move ===
+        // Chrome's batch tabs.move() increments the index for each tab (12, 13, 14...).
+        // This works fine when moving UP (tabs are after target, removing doesn't shift target).
+        // But when moving DOWN (tabs are before target), removing each tab shifts the target,
+        // causing gaps between the moved tabs.
+        //
+        // Solution:
+        // - Moving UP: use batch move with index = finalInsertAfter + 1
+        // - Moving DOWN: move each tab INDIVIDUALLY to the SAME index (finalInsertAfter)
+        //   Each removal shifts the target down, but inserting at the original index
+        //   compensates perfectly, keeping tabs contiguous.
+        
+        console.log(`Moving ${tabIdsToMove.length} tabs ${isMovingDown ? 'DOWN' : 'UP'}`);
+        console.log(`Tabs: [${tabIdsToMove.join(', ')}]`);
+        
+        try {
+          if (isMovingDown) {
+            // Moving DOWN: tabs are BEFORE target
+            // Move each tab individually to the SAME index
+            // As each tab is removed from before target, target shifts down by 1
+            // Inserting at the original insertAfterIndex puts each tab right after the shifted target
+            const moveToIndex = finalInsertAfter;
+            console.log(`Moving DOWN: each tab individually to index ${moveToIndex}`);
+            
+            for (const tabId of tabIdsToMove) {
+              await chrome.tabs.move(tabId, { index: moveToIndex, windowId });
+            }
+          } else {
+            // Moving UP: tabs are AFTER target
+            // Batch move works fine - target doesn't shift when we remove tabs from after it
+            const moveToIndex = finalInsertAfter + 1;
+            console.log(`Moving UP: batch move to index ${moveToIndex}`);
+            
+            await chrome.tabs.move(tabIdsToMove, { index: moveToIndex, windowId });
+          }
+          console.log(`Move executed successfully`);
+        } catch (moveError) {
+          console.error('chrome.tabs.move failed:', moveError);
+          skipOnMovedBroadcast = false;
+          return { success: false, error: moveError.message };
+        }
+        
+        // === STEP 7: Sync hierarchy with Chrome's new state ===
+        const afterMoveTabs = await chrome.tabs.query({ windowId });
+        afterMoveTabs.sort((a, b) => a.index - b.index);
+        
+        console.log('AFTER move - Chrome tab order:');
+        afterMoveTabs.forEach(t => console.log(`  [${t.index}] id=${t.id} "${t.title?.substring(0, 30)}"`));
+        
+        // Update all indices
+        for (const tab of afterMoveTabs) {
+          tabHierarchy.updateTab(tab.id, { index: tab.index, windowId: tab.windowId });
+        }
+        
+        // Update parent relationship for dragged tab
+        tabHierarchy._updateParentRelationship(draggedTabId, newParentId);
+        
+        // Re-sort all children to match Chrome order
+        tabHierarchy.sortAllChildrenByBrowserIndex();
+        
+        // === STEP 8: Validate result ===
+        const newIndexMap = new Map(afterMoveTabs.map(t => [t.id, t.index]));
+        const finalIndices = tabIdsToMove.map(id => newIndexMap.get(id));
+        console.log('Final positions:', tabIdsToMove.map((id, i) => `${id}@${finalIndices[i]}`).join(', '));
+        
+        // Check contiguity
+        let contiguous = true;
+        for (let i = 1; i < finalIndices.length; i++) {
+          if (finalIndices[i] !== finalIndices[i-1] + 1) {
+            console.warn(`Not contiguous: ${tabIdsToMove[i]} at ${finalIndices[i]}, expected ${finalIndices[i-1] + 1}`);
+            contiguous = false;
+          }
+        }
+        
+        console.log(contiguous ? 'SUCCESS: Tabs moved correctly' : 'WARNING: Tabs not contiguous');
+        console.log('========== MOVE OPERATION END ==========');
+        
+        skipOnMovedBroadcast = false;
+        broadcastHierarchyUpdate();
+        
+        return { success: true };
+        
+      } catch (error) {
+        console.error('Move failed:', error);
+        skipOnMovedBroadcast = false;
+        
+        // Recovery: sync with browser
+        try {
+          await TabParity.syncWithBrowser(tabHierarchy, true);
+          broadcastHierarchyUpdate();
+        } catch (e) {
+          console.error('Recovery failed:', e);
+        }
+        
+        return { success: false, error: error.message };
+      }
+    }
+
     case 'getTabParent': {
       const tab = tabHierarchy.getTab(request.tabId);
       return {
@@ -471,12 +704,19 @@ chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
 });
 
 chrome.tabs.onMoved.addListener(async (tabId, moveInfo) => {
-  console.log('Tab moved:', tabId, 'from', moveInfo.fromIndex, 'to', moveInfo.toIndex);
+  console.log('Tab moved externally:', tabId, 'from', moveInfo.fromIndex, 'to', moveInfo.toIndex);
+  
+  // Skip if this move was initiated by our atomic move handler
+  if (skipOnMovedBroadcast) {
+    console.log('Skipping onMoved broadcast (atomic move in progress)');
+    return;
+  }
   
   try {
     await ensureInitialized();
     
     // Update all tabs in the window to get accurate indices
+    // This ensures our hierarchy matches Chrome's actual tab order
     const allTabsInWindow = await chrome.tabs.query({ windowId: moveInfo.windowId });
     
     for (const tab of allTabsInWindow) {
@@ -486,13 +726,23 @@ chrome.tabs.onMoved.addListener(async (tabId, moveInfo) => {
       });
     }
     
-    // Re-sort children after index changes
+    // Re-sort ALL children to match Chrome's new index order
+    // This is critical for maintaining 1:1 parity between sidebar and tab bar
     tabHierarchy.sortAllChildrenByBrowserIndex();
     
-    // Immediate broadcast for move operations
+    // Immediate broadcast for move operations (no debounce)
+    // Tab moves need instant visual feedback
     broadcastHierarchyUpdate();
   } catch (error) {
-    console.error('Error handling tab move:', error);
+    console.error('Error handling external tab move:', error);
+    
+    // Try to recover by syncing with browser
+    try {
+      await TabParity.syncWithBrowser(tabHierarchy, true);
+      broadcastHierarchyUpdate();
+    } catch (recoveryError) {
+      console.error('Recovery sync failed:', recoveryError);
+    }
   }
 });
 

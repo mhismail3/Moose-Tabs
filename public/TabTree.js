@@ -226,23 +226,38 @@ class TabTree {
 
   /**
    * Insert a child tab ID into parent's children array in proper index order
+   * This maintains the invariant that children are ordered by browser index
    * @param {Object} parent - Parent tab object
    * @param {number} childId - Child tab ID to insert
    * @param {number} childIndex - Browser index of the child tab
    */
   _insertChildInOrder(parent, childId, childIndex) {
-    if (!parent.children.includes(childId)) {
-      // Find the correct position based on browser index
-      let insertPos = parent.children.length;
-      for (let i = 0; i < parent.children.length; i++) {
-        const existingChild = this.tabs.get(parent.children[i]);
-        if (existingChild && (existingChild.index || 0) > (childIndex || 0)) {
+    // Remove if already present (to handle moves within same parent)
+    const existingIdx = parent.children.indexOf(childId);
+    if (existingIdx !== -1) {
+      parent.children.splice(existingIdx, 1);
+    }
+    
+    // Find the correct position based on browser index
+    let insertPos = parent.children.length;
+    for (let i = 0; i < parent.children.length; i++) {
+      const existingChild = this.tabs.get(parent.children[i]);
+      if (existingChild) {
+        const existingIndex = existingChild.index || 0;
+        const newIndex = childIndex || 0;
+        
+        if (existingIndex > newIndex) {
+          insertPos = i;
+          break;
+        } else if (existingIndex === newIndex && parent.children[i] > childId) {
+          // Stable sort: if same index, sort by ID
           insertPos = i;
           break;
         }
       }
-      parent.children.splice(insertPos, 0, childId);
     }
+    
+    parent.children.splice(insertPos, 0, childId);
   }
 
   /**
@@ -344,19 +359,60 @@ class TabTree {
 
   /**
    * Sort all children across the entire tree by browser index
+   * This ensures the sidebar order matches the Chrome tab bar order
    */
   sortAllChildrenByBrowserIndex() {
     this.tabs.forEach((tab, id) => {
       if (tab.children.length > 1) {
+        // First, filter out any invalid children
+        tab.children = tab.children.filter(childId => this.tabs.has(childId));
+        
+        // Sort by browser index
         tab.children.sort((a, b) => {
           const childA = this.tabs.get(a);
           const childB = this.tabs.get(b);
           if (!childA || !childB) return 0;
-          return (childA.index || 0) - (childB.index || 0);
+          
+          // Use index as primary sort key
+          const indexDiff = (childA.index || 0) - (childB.index || 0);
+          if (indexDiff !== 0) return indexDiff;
+          
+          // Fall back to tab ID for stable sorting
+          return a - b;
         });
       }
     });
 
+    this._debouncedSave();
+  }
+  
+  /**
+   * Reorder children of a specific parent to match a given order
+   * Used after move operations to ensure correct hierarchy order
+   * @param {number} parentId - Parent tab ID (or null for root)
+   * @param {number[]} orderedChildIds - Ordered array of child IDs
+   */
+  reorderChildren(parentId, orderedChildIds) {
+    if (parentId === null) {
+      // For root tabs, we don't maintain order in rootTabs Set
+      // The order is determined by index when building hierarchy
+      return;
+    }
+    
+    const parent = this.tabs.get(parentId);
+    if (!parent) return;
+    
+    // Filter to only include valid children that exist
+    const validOrderedIds = orderedChildIds.filter(id => 
+      this.tabs.has(id) && parent.children.includes(id)
+    );
+    
+    // Keep any children not in the ordered list at the end
+    const remainingChildren = parent.children.filter(id => 
+      !validOrderedIds.includes(id)
+    );
+    
+    parent.children = [...validOrderedIds, ...remainingChildren];
     this._debouncedSave();
   }
 
@@ -425,6 +481,7 @@ class TabTree {
 
   /**
    * Get complete hierarchy structure
+   * This is the main method for getting the tab tree to display in the sidebar
    * @param {number} windowId - Optional window ID filter
    * @returns {Array} Array of root tabs with nested children, sorted by browser order
    */
@@ -437,18 +494,23 @@ class TabTree {
       : roots;
     
     // Sort by window ID first, then by index to maintain browser tab order
+    // This ensures root tabs appear in the same order as Chrome's tab bar
     filteredRoots.sort((a, b) => {
       if (a.windowId !== b.windowId) {
         return a.windowId - b.windowId;
       }
-      return (a.index || 0) - (b.index || 0);
+      const indexDiff = (a.index || 0) - (b.index || 0);
+      if (indexDiff !== 0) return indexDiff;
+      // Stable sort fallback by ID
+      return a.id - b.id;
     });
     
-    return filteredRoots.map(root => this._buildHierarchyNode(root.id));
+    return filteredRoots.map(root => this._buildHierarchyNode(root.id)).filter(Boolean);
   }
 
   /**
    * Private method to build hierarchy node with children
+   * Recursively builds the tree structure with children sorted by browser index
    * @param {number} tabId - Tab ID to build node for
    * @returns {Object} Hierarchy node with children, sorted by browser order
    */
@@ -458,12 +520,28 @@ class TabTree {
       return null;
     }
 
-    // Get children in their stored order (already sorted by index)
-    const children = this.getChildren(tabId);
+    // Get children - they should already be sorted by index from sortAllChildrenByBrowserIndex
+    // But sort them here too for safety
+    const internalTab = this.tabs.get(tabId);
+    if (!internalTab) {
+      return { ...tab, children: [] };
+    }
+    
+    // Build sorted children list
+    const sortedChildIds = [...internalTab.children]
+      .filter(childId => this.tabs.has(childId))
+      .sort((a, b) => {
+        const childA = this.tabs.get(a);
+        const childB = this.tabs.get(b);
+        if (!childA || !childB) return 0;
+        const indexDiff = (childA.index || 0) - (childB.index || 0);
+        if (indexDiff !== 0) return indexDiff;
+        return a - b; // Stable sort by ID
+      });
     
     return {
       ...tab,
-      children: children.map(child => this._buildHierarchyNode(child.id)).filter(Boolean)
+      children: sortedChildIds.map(childId => this._buildHierarchyNode(childId)).filter(Boolean)
     };
   }
 
@@ -800,18 +878,34 @@ class TabTree {
 
   /**
    * Update parent relationship for a tab
+   * This method ensures proper removal from old parent and addition to new parent
    * @param {number} tabId - Tab ID
    * @param {number|null} newParentId - New parent ID (null for root)
+   * @returns {boolean} True if relationship was updated successfully
    */
   _updateParentRelationship(tabId, newParentId) {
     const tab = this.tabs.get(tabId);
     if (!tab) {
-      return;
+      console.warn(`_updateParentRelationship: Tab ${tabId} not found`);
+      return false;
     }
 
-    // Remove from current parent
-    if (tab.parentId) {
-      const oldParent = this.tabs.get(tab.parentId);
+    const oldParentId = tab.parentId;
+    
+    // Skip if no change
+    if (oldParentId === newParentId) {
+      return true;
+    }
+    
+    // Check for circular reference before making changes
+    if (newParentId !== null && this._wouldCreateCircularRef(tabId, newParentId)) {
+      console.warn(`_updateParentRelationship: Would create circular reference for tab ${tabId}`);
+      return false;
+    }
+
+    // === Remove from current parent ===
+    if (oldParentId !== null) {
+      const oldParent = this.tabs.get(oldParentId);
       if (oldParent) {
         const idx = oldParent.children.indexOf(tabId);
         if (idx !== -1) {
@@ -819,20 +913,53 @@ class TabTree {
         }
       }
     } else {
+      // Was a root tab
       this.rootTabs.delete(tabId);
     }
 
-    // Set new parent relationship
-    if (newParentId && this.tabs.has(newParentId) && !this._wouldCreateCircularRef(tabId, newParentId)) {
+    // === Set new parent relationship ===
+    if (newParentId !== null && this.tabs.has(newParentId)) {
       tab.parentId = newParentId;
       const newParent = this.tabs.get(newParentId);
+      
+      // Insert child in correct position based on index
       this._insertChildInOrder(newParent, tabId, tab.index);
     } else {
+      // Becoming a root tab
       tab.parentId = null;
       this.rootTabs.add(tabId);
     }
 
     this._debouncedSave();
+    return true;
+  }
+  
+  /**
+   * Move a tab and optionally its descendants to a new parent
+   * This is a higher-level operation that handles the complete move
+   * @param {number} tabId - Tab ID to move
+   * @param {number|null} newParentId - New parent ID (null for root)
+   * @param {number[]} descendantIds - IDs of descendants to keep attached
+   * @returns {boolean} True if move was successful
+   */
+  moveTabWithDescendants(tabId, newParentId, descendantIds = []) {
+    const tab = this.tabs.get(tabId);
+    if (!tab) {
+      console.warn(`moveTabWithDescendants: Tab ${tabId} not found`);
+      return false;
+    }
+    
+    // Update the main tab's parent
+    const success = this._updateParentRelationship(tabId, newParentId);
+    if (!success) {
+      return false;
+    }
+    
+    // Descendants keep their parent relationships (they're already children of the moved tab)
+    // But we need to ensure their indices are updated
+    // The caller should call sortAllChildrenByBrowserIndex() after updating indices
+    
+    return true;
   }
 
   /**
@@ -864,6 +991,59 @@ class TabTree {
 
     traverse(hierarchy);
     return result;
+  }
+  
+  /**
+   * Verify that the hierarchy's index order matches Chrome's actual order
+   * This is useful for debugging parity issues
+   * @param {Array} browserTabs - Array of browser tabs sorted by index
+   * @param {number} windowId - Window ID to check
+   * @returns {Object} Validation result with any ordering discrepancies
+   */
+  verifyIndexOrder(browserTabs, windowId) {
+    const flatList = this.getFlatList(windowId);
+    const hierarchyOrder = flatList.map(item => item.tab.id);
+    const browserOrder = browserTabs
+      .filter(t => t.windowId === windowId)
+      .sort((a, b) => a.index - b.index)
+      .map(t => t.id);
+    
+    const issues = [];
+    
+    // Check if the hierarchy flat list matches browser order
+    // Note: This won't be exactly the same because hierarchy has tree structure
+    // but all tabs should be present and their indices should match
+    
+    for (let i = 0; i < flatList.length; i++) {
+      const hierarchyTab = flatList[i].tab;
+      const browserTab = browserTabs.find(t => t.id === hierarchyTab.id);
+      
+      if (!browserTab) {
+        issues.push({
+          type: 'missing_in_browser',
+          tabId: hierarchyTab.id,
+          message: `Tab ${hierarchyTab.id} exists in hierarchy but not in browser`
+        });
+        continue;
+      }
+      
+      if (hierarchyTab.index !== browserTab.index) {
+        issues.push({
+          type: 'index_mismatch',
+          tabId: hierarchyTab.id,
+          hierarchyIndex: hierarchyTab.index,
+          browserIndex: browserTab.index,
+          message: `Tab ${hierarchyTab.id} has index ${hierarchyTab.index} in hierarchy but ${browserTab.index} in browser`
+        });
+      }
+    }
+    
+    return {
+      isValid: issues.length === 0,
+      hierarchyCount: hierarchyOrder.length,
+      browserCount: browserOrder.length,
+      issues
+    };
   }
 }
 

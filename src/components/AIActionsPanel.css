@@ -1063,6 +1063,44 @@
   transition: width 0.3s ease;
 }
 
+/* Phase spinner for active phases */
+.phase-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent-0);
+  border-radius: 50%;
+  animation: phaseSpinnerRotate 0.8s linear infinite;
+}
+
+@keyframes phaseSpinnerRotate {
+  to { transform: rotate(360deg); }
+}
+
+/* Progress status message */
+.progress-status {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  min-height: 18px;
+  animation: statusFade 0.3s ease;
+}
+
+@keyframes statusFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Pending phase styling */
+.progress-phase.pending {
+  opacity: 0.5;
+}
+
+.progress-phase.pending .phase-icon {
+  filter: grayscale(0.5);
+}
+
 /* ============================================
    THINKING DISPLAY (Collapsible Reasoning)
    ============================================ */
@@ -1304,4 +1342,5 @@
 .results-sources a:hover {
   background: var(--color-hover);
 }
+
 
