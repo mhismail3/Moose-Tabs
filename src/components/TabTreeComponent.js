@@ -5,7 +5,6 @@ import { DropZoneProvider } from './context/DropZoneContext';
 import { TutorialProvider, useTutorial } from './tutorial/TutorialContext';
 import TutorialOverlay from './tutorial/TutorialOverlay';
 import AIOrganizePanel from './AIOrganizePanel';
-import AIActionsPanel from './AIActionsPanel';
 import { useSettings } from '../contexts/SettingsContext';
 import './TabTree.css';
 
@@ -17,7 +16,6 @@ function TabTreeContent({ tabHierarchy = [] }) {
   const [editingWindowId, setEditingWindowId] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [showAIPanel, setShowAIPanel] = useState(false);
-  const [showAIActionsPanel, setShowAIActionsPanel] = useState(false);
   
   // Check if AI is enabled
   const aiEnabled = settings?.ai?.enabled ?? false;
@@ -273,24 +271,14 @@ function TabTreeContent({ tabHierarchy = [] }) {
               </button>
             </div>
             {aiEnabled && (
-              <>
-                <button
-                  className="ai-organize-btn"
-                  onClick={() => setShowAIPanel(true)}
-                  title="Organize tabs with AI"
-                  aria-label="Organize tabs with AI"
-                >
-                  🤖
-                </button>
-                <button
-                  className="ai-actions-btn"
-                  onClick={() => setShowAIActionsPanel(true)}
-                  title="AI Actions"
-                  aria-label="AI Actions on tabs"
-                >
-                  ✨
-                </button>
-              </>
+              <button
+                className="ai-organize-btn"
+                onClick={() => setShowAIPanel(true)}
+                title="Organize tabs with AI"
+                aria-label="Organize tabs with AI"
+              >
+                🤖
+              </button>
             )}
           </div>
         </div>
@@ -362,14 +350,6 @@ function TabTreeContent({ tabHierarchy = [] }) {
         <AIOrganizePanel
           tabs={tabHierarchy}
           onClose={() => setShowAIPanel(false)}
-        />
-      )}
-      
-      {/* AI Actions Panel */}
-      {showAIActionsPanel && (
-        <AIActionsPanel
-          tabs={tabHierarchy}
-          onClose={() => setShowAIActionsPanel(false)}
         />
       )}
       

@@ -3,7 +3,7 @@
 A Chrome extension that transforms your chaotic tab bar into an organized, hierarchical tree view. Visualize tab relationships based on how they were opened and navigate complex browsing sessions with ease.
 
 ![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-green)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## 🎯 Single Purpose

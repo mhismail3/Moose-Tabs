@@ -65,10 +65,6 @@ export const DEFAULT_SETTINGS = {
     superchargedModel: null, // Override model for supercharged mode (null = auto-select best)
   },
 
-  // AI Actions - Custom prompts for tab analysis
-  aiActions: {
-    customPrompts: [], // User-created prompts
-  }
 };
 
 // Providers that support supercharged mode (premium features)
@@ -107,82 +103,6 @@ export const SUPERCHARGED_MODELS = {
     ]
   }
 };
-
-// Default AI Action prompts
-export const DEFAULT_AI_PROMPTS = [
-  {
-    id: 'summarize',
-    name: 'Summarize',
-    icon: '📝',
-    description: 'Get a summary of what these tabs are about',
-    prompt: 'Analyze these browser tabs and provide a concise summary of what they collectively represent. What topics, themes, or tasks do they relate to? Provide a brief overview in 2-3 sentences.',
-    category: 'analysis',
-    isDefault: true,
-  },
-  {
-    id: 'find-duplicates',
-    name: 'Find Duplicates',
-    icon: '🔍',
-    description: 'Identify tabs with similar or duplicate content',
-    prompt: 'Analyze these browser tabs and identify any that appear to be duplicates or have very similar content. List any groups of tabs that cover the same topic or webpage. Format as a list with the tab titles and why they are similar.',
-    category: 'cleanup',
-    isDefault: true,
-  },
-  {
-    id: 'suggest-categories',
-    name: 'Suggest Categories',
-    icon: '🏷️',
-    description: 'Suggest how to categorize these tabs',
-    prompt: 'Analyze these browser tabs and suggest logical categories or groups for organizing them. Provide category names and list which tabs belong to each. Be specific and practical.',
-    category: 'organization',
-    isDefault: true,
-  },
-  {
-    id: 'cleanup-suggestions',
-    name: 'Cleanup Suggestions',
-    icon: '🧹',
-    description: 'Recommend tabs you might want to close',
-    prompt: 'Analyze these browser tabs and suggest which ones might be safe to close. Consider: tabs that seem outdated, tabs with temporary content (search results, expired deals), or tabs that might be duplicates. Explain your reasoning for each suggestion.',
-    category: 'cleanup',
-    isDefault: true,
-  },
-  {
-    id: 'find-important',
-    name: 'Find Important',
-    icon: '⭐',
-    description: 'Identify potentially important tabs',
-    prompt: 'Analyze these browser tabs and identify which ones appear to be most important or high-priority. Consider: tabs related to work, deadlines, important communications, or ongoing tasks. Rank them by likely importance and explain why.',
-    category: 'analysis',
-    isDefault: true,
-  },
-  {
-    id: 'research-summary',
-    name: 'Research Summary',
-    icon: '📚',
-    description: 'Summarize research across tabs',
-    prompt: 'These tabs appear to be part of a research session. Synthesize the information across these tabs into a coherent research summary. What are the main findings, themes, or conclusions that can be drawn from this collection of tabs?',
-    category: 'analysis',
-    isDefault: true,
-  },
-  {
-    id: 'find-related',
-    name: 'Find Related',
-    icon: '🔗',
-    description: 'Find tabs that are related to each other',
-    prompt: 'Analyze these browser tabs and identify connections between them. Which tabs are related to each other and how? Group related tabs together and explain the relationships.',
-    category: 'organization',
-    isDefault: true,
-  },
-  {
-    id: 'task-analysis',
-    name: 'Task Analysis',
-    icon: '⏰',
-    description: 'Analyze what tasks these tabs represent',
-    prompt: 'Analyze these browser tabs and identify what tasks or activities they represent. What is the user likely trying to accomplish? List the apparent tasks and which tabs relate to each task.',
-    category: 'analysis',
-    isDefault: true,
-  },
-];
 
 // Provider configurations for AI
 // Free models with automatic fallback
@@ -568,76 +488,6 @@ function deepEqual(a, b) {
   }
   
   return false;
-}
-
-// AI Actions prompt management
-
-/**
- * Get all AI action prompts (default + custom)
- * @returns {Promise<Array>} Array of prompt objects
- */
-export async function getAIPrompts() {
-  const settings = await getSettings();
-  const customPrompts = settings.aiActions?.customPrompts || [];
-  // Combine default prompts with custom prompts
-  return [...DEFAULT_AI_PROMPTS, ...customPrompts];
-}
-
-/**
- * Get custom AI prompts only
- * @returns {Promise<Array>} Array of custom prompt objects
- */
-export async function getCustomAIPrompts() {
-  const settings = await getSettings();
-  return settings.aiActions?.customPrompts || [];
-}
-
-/**
- * Save a custom AI prompt
- * @param {Object} prompt - Prompt object with id, name, icon, description, prompt, category
- * @returns {Promise<void>}
- */
-export async function saveCustomAIPrompt(prompt) {
-  const settings = await getSettings();
-  const customPrompts = settings.aiActions?.customPrompts || [];
-  
-  // Generate ID if not provided
-  if (!prompt.id) {
-    prompt.id = `custom-${Date.now()}`;
-  }
-  prompt.isDefault = false;
-  
-  // Check if updating existing or adding new
-  const existingIndex = customPrompts.findIndex(p => p.id === prompt.id);
-  if (existingIndex >= 0) {
-    customPrompts[existingIndex] = prompt;
-  } else {
-    customPrompts.push(prompt);
-  }
-  
-  await updateSetting('aiActions.customPrompts', customPrompts);
-}
-
-/**
- * Delete a custom AI prompt
- * @param {string} promptId - ID of the prompt to delete
- * @returns {Promise<void>}
- */
-export async function deleteCustomAIPrompt(promptId) {
-  const settings = await getSettings();
-  const customPrompts = settings.aiActions?.customPrompts || [];
-  const filtered = customPrompts.filter(p => p.id !== promptId);
-  await updateSetting('aiActions.customPrompts', filtered);
-}
-
-/**
- * Get a specific AI prompt by ID
- * @param {string} promptId - ID of the prompt
- * @returns {Promise<Object|null>} Prompt object or null
- */
-export async function getAIPromptById(promptId) {
-  const allPrompts = await getAIPrompts();
-  return allPrompts.find(p => p.id === promptId) || null;
 }
 
 // Supercharged mode helpers

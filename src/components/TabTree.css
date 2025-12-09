@@ -159,47 +159,6 @@
   transform: translateY(0) scale(0.95);
 }
 
-/* AI Actions Button */
-.ai-actions-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 18px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.ai-actions-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(48, 153, 118, 0.1), rgba(34, 197, 94, 0.1));
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.ai-actions-btn:hover {
-  border-color: var(--color-accent-0);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(48, 153, 118, 0.2);
-}
-
-.ai-actions-btn:hover::before {
-  opacity: 1;
-}
-
-.ai-actions-btn:active {
-  transform: translateY(0) scale(0.95);
-}
-
 /* Tab Tree Content - Scrollable */
 .tab-tree-content {
   flex: 1;
